@@ -436,8 +436,7 @@ class TrainGroup:
         ), "Call init_weight_update_group first"
 
         titan_state = self.model.state_dict()
-        vllm_compat_state = torchtitan_to_vllm_compat(titan_state)
-        breakpoint()
+        vllm_compat_state = torchtitan_to_vllm(titan_state)
 
         for name, tensor in vllm_compat_state.items():
             dtype_name = dtype_to_str(tensor.dtype)
