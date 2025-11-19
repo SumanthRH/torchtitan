@@ -125,7 +125,7 @@ class WorkerExtension:
         del weight
 
 
-@ray.remote(num_gpus=1)
+@ray.remote
 class VLLMRolloutEngine:
     """
     vLLM engine for fast rollouts with weight updates.
@@ -137,10 +137,17 @@ class VLLMRolloutEngine:
     Args:
         model_path: Path to HuggingFace model (for config/tokenizer)
         temp_checkpoint_dir: Directory to save temporary weight checkpoints
+        tp_size: Tensor parallel size (number of GPUs)
     """
 
-    def __init__(self, model_path: str, temp_checkpoint_dir: str = "./converted"):
+    def __init__(
+        self,
+        model_path: str,
+        temp_checkpoint_dir: str = "./converted",
+        tp_size: int = 1,
+    ):
         self.base_model_path = model_path
+        self.tp_size = tp_size
         self.temp_model_dir = os.path.abspath(
             os.path.join(temp_checkpoint_dir, "vllm_temp_model")
         )
@@ -182,6 +189,7 @@ class VLLMRolloutEngine:
             gpu_memory_utilization=0.3,  # Reduced from 0.5
             seed=42,  # Fixed seed for determinism
             enforce_eager=True,
+            tensor_parallel_size=self.tp_size,
             worker_extension_cls="torchtitan.experiments.deterministic_vllm_rl.simple_rl_ray.WorkerExtension",
         )
 
@@ -261,6 +269,7 @@ class VLLMRolloutEngine:
                 gpu_memory_utilization=0.3,  # Reduced from 0.5
                 seed=42,  # Fixed seed for determinism
                 enforce_eager=True,
+                tensor_parallel_size=self.tp_size,
                 worker_extension_cls=WorkerExtension,
             )
             print("✓ Created new vLLM engine")
@@ -1265,6 +1274,9 @@ def main():
     cache_dir = "/mnt/local_storage/models"
     output_dir = "/mnt/local_storage/converted"
 
+    # Parallelism config
+    vllm_tp_size = 2  # vLLM tensor parallel size (number of GPUs for vLLM)
+
     # Training config
     group_size = 8  # Samples per prompt for GRPO (increased from 4)
     num_rollout_batches = 2  # Multiple rollout batches per update (NEW!)
@@ -1299,11 +1311,10 @@ def main():
     use_vllm_compat = vllm_is_batch_invariant()
 
     # Initialize persistent vLLM engine for rollouts
-    print("\nInitializing vLLM engine for rollouts...")
-    vllm_engine = VLLMRolloutEngine.remote(model_path)
-
-    # Load tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+    print(f"\nInitializing vLLM engine for rollouts (TP size: {vllm_tp_size})...")
+    vllm_engine = VLLMRolloutEngine.options(num_gpus=vllm_tp_size).remote(
+        model_path, tp_size=vllm_tp_size
+    )
 
     # Create TrainGroup for training
     print("\nInitializing TrainGroup...")
@@ -1322,9 +1333,8 @@ def main():
     master_address = get_ip()
     master_port = get_open_port()
 
-    # For now, assume single vLLM worker (world_size = 2: trainer + 1 vLLM worker)
-    # TODO: Support tensor parallel vLLM (would need world_size = 1 + num_vllm_workers)
-    world_size = 2
+    # world_size = trainer (1) + vLLM workers (vllm_tp_size)
+    world_size = 1 + vllm_tp_size
     rank_offset = 1  # vLLM workers start at rank 1
 
     # Initialize weight update group on vLLM workers
@@ -1396,6 +1406,7 @@ def main():
     print(
         f"  GRPO mode: {'Stable (mean-centering)' if use_stable_grpo else f'Exponential (beta={grpo_beta})'}"
     )
+    print(f"  vLLM tensor parallel size: {vllm_tp_size}")
     print("=" * 80)
     from tqdm import tqdm
 
