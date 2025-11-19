@@ -379,6 +379,7 @@ def dtype_to_str(dtype):
         raise ValueError(f"Unsupported dtype: {dtype}")
 
 
+@ray.remote(num_gpus=1)
 class TrainGroup:
     def __init__(
         self,
@@ -405,6 +406,11 @@ class TrainGroup:
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=learning_rate)
         self.vllm_engine = vllm_engine_ref
         self.model_update_group = None  # Will be initialized later
+
+        # Save initial weights for tracking weight changes
+        self.initial_state = {
+            name: param.clone().cpu() for name, param in self.model.state_dict().items()
+        }
 
     def init_weight_update_group(self, master_address, master_port, world_size):
         """
@@ -482,6 +488,61 @@ class TrainGroup:
         self.optimizer.step()
 
         self.optimizer.zero_grad()
+
+    def compute_weight_deltas(self) -> dict:
+        """
+        Compute weight changes from initial state based on magnitude (L2 norm).
+
+        Returns:
+            Dictionary of weight delta statistics by module
+        """
+
+        deltas = {}
+        module_stats = {}
+
+        with torch.no_grad():
+            current_state = self.model.state_dict()
+
+            for name, current_param in current_state.items():
+                if name not in self.initial_state:
+                    continue
+
+                # Move current param to CPU to compare with initial (avoid GPU OOM)
+                current_param_cpu = current_param.cpu()
+                initial_param = self.initial_state[name]
+                delta = current_param_cpu - initial_param
+
+                # Extract module name (e.g., "layers.0.attention.wq" -> "layers.0")
+                parts = name.split(".")
+                if len(parts) >= 2:
+                    module_name = ".".join(parts[:2])
+                else:
+                    module_name = parts[0]
+
+                # Compute magnitude (L2 norm) of change
+                delta_norm = torch.linalg.vector_norm(delta).item()
+                param_norm = torch.linalg.vector_norm(current_param_cpu).item()
+
+                # Relative change: ||delta|| / ||param||
+                relative_change = delta_norm / (param_norm + 1e-8)
+
+                # Accumulate module-level stats
+                if module_name not in module_stats:
+                    module_stats[module_name] = {"norms": [], "relative": []}
+
+                module_stats[module_name]["norms"].append(delta_norm)
+                module_stats[module_name]["relative"].append(relative_change)
+
+            # Average module-level stats
+            for module_name, stats in module_stats.items():
+                deltas[f"weight_delta/{module_name}/magnitude"] = sum(
+                    stats["norms"]
+                ) / len(stats["norms"])
+                deltas[f"weight_delta/{module_name}/relative_change"] = sum(
+                    stats["relative"]
+                ) / len(stats["relative"])
+
+        return deltas
 
 
 def download_and_convert_model(
@@ -1062,8 +1123,8 @@ def rl_update_step_ray(
 
     Args:
         tokenizer: Tokenizer
-        train_group: TrainGroup instance (local, not Ray actor)
-        vllm_engine: Ray ObjectRef to VLLMRolloutEngine
+        train_group: Ray actor reference to TrainGroup
+        vllm_engine: Ray actor reference to VLLMRolloutEngine
         prompt_texts: List of prompt strings
         expected_answers: List of expected answers for each prompt
         group_size: Number of samples per prompt for GRPO
@@ -1083,7 +1144,7 @@ def rl_update_step_ray(
         reward_fn = trivial_reward_function
 
     # Broadcast updated weights to vLLM workers via NCCL
-    train_group.broadcast_weights()
+    ray.get(train_group.broadcast_weights.remote())
 
     all_completions = []
     all_rewards = []
@@ -1133,12 +1194,14 @@ def rl_update_step_ray(
             )
 
         # Compute loss and backward pass on training model
-        loss, loss_metrics = train_group.forward_backward(
-            vllm_token_ids,
-            vllm_token_log_probs,
-            prompt_token_ids,
-            advantages,
-            num_rollout_batches,
+        loss, loss_metrics = ray.get(
+            train_group.forward_backward.remote(
+                vllm_token_ids,
+                vllm_token_log_probs,
+                prompt_token_ids,
+                advantages,
+                num_rollout_batches,
+            )
         )
         total_loss += loss
 
@@ -1149,7 +1212,7 @@ def rl_update_step_ray(
         batch_metrics.append(loss_metrics)
 
     # Optimizer step (gradient clipping + weight update)
-    train_group.optimizer_step()
+    ray.get(train_group.optimizer_step.remote())
 
     # Aggregate metrics across batches
     avg_reward = sum(all_rewards) / len(all_rewards)
@@ -1320,65 +1383,6 @@ def rl_update_step(
     return metrics
 
 
-def compute_weight_deltas(model: torch.nn.Module, initial_state: dict) -> dict:
-    """
-    Compute weight changes from initial state based on magnitude (L2 norm).
-
-    Args:
-        model: Current model
-        initial_state: Initial model state dict
-
-    Returns:
-        Dictionary of weight delta statistics by module
-    """
-    deltas = {}
-    module_stats = {}
-
-    with torch.no_grad():
-        current_state = model.state_dict()
-
-        for name, current_param in current_state.items():
-            if name not in initial_state:
-                continue
-
-            # Move current param to CPU to compare with initial (avoid GPU OOM)
-            current_param_cpu = current_param.cpu()
-            initial_param = initial_state[name]
-            delta = current_param_cpu - initial_param
-
-            # Extract module name (e.g., "layers.0.attention.wq" -> "layers.0")
-            parts = name.split(".")
-            if len(parts) >= 2:
-                module_name = ".".join(parts[:2])
-            else:
-                module_name = parts[0]
-
-            # Compute magnitude (L2 norm) of change
-            delta_norm = torch.linalg.vector_norm(delta).item()
-            param_norm = torch.linalg.vector_norm(current_param_cpu).item()
-
-            # Relative change: ||delta|| / ||param||
-            relative_change = delta_norm / (param_norm + 1e-8)
-
-            # Accumulate module-level stats
-            if module_name not in module_stats:
-                module_stats[module_name] = {"norms": [], "relative": []}
-
-            module_stats[module_name]["norms"].append(delta_norm)
-            module_stats[module_name]["relative"].append(relative_change)
-
-        # Average module-level stats
-        for module_name, stats in module_stats.items():
-            deltas[f"weight_delta/{module_name}/magnitude"] = sum(stats["norms"]) / len(
-                stats["norms"]
-            )
-            deltas[f"weight_delta/{module_name}/relative_change"] = sum(
-                stats["relative"]
-            ) / len(stats["relative"])
-
-    return deltas
-
-
 def _check_if_batch_invariant_enabled(use_stable_grpo):
     # Check if batch invariance is enabled
     from vllm.model_executor.layers.batch_invariant import vllm_is_batch_invariant
@@ -1402,7 +1406,7 @@ def _check_if_batch_invariant_enabled(use_stable_grpo):
             )
 
 
-@ray.remote(num_gpus=1)
+@ray.remote(num_cpus=4)
 def main():
     """Simple RL training loop using vLLM for fast rollouts."""
 
@@ -1453,20 +1457,13 @@ def main():
 
     # Create TrainGroup for training
     print("\nInitializing TrainGroup...")
-    train_group = TrainGroup(
+    train_group = TrainGroup.remote(
         titan_checkpoint_path=titan_checkpoint_path,
         model_path=model_path,
         use_vllm_compat=use_vllm_compat,
         learning_rate=learning_rate,
         vllm_engine_ref=vllm_engine,
     )
-
-    # Save initial weights for delta computation (on CPU to save GPU memory)
-    print("Saving initial weights for tracking...")
-    initial_state = {
-        name: param.clone().cpu()
-        for name, param in train_group.model.state_dict().items()
-    }
 
     # Set up weight update groups (NCCL communication)
     print("\nSetting up weight update groups...")
@@ -1489,10 +1486,12 @@ def main():
     )
 
     # Initialize weight update group on training process
-    train_group.init_weight_update_group(master_address, master_port, world_size)
+    train_handle = train_group.init_weight_update_group.remote(
+        master_address, master_port, world_size
+    )
 
-    # Wait for vLLM workers to join
-    ray.get(handle)
+    # Wait for both vLLM workers and training actor to join
+    ray.get([handle, train_handle])
     print("✓ Weight update groups initialized")
 
     # Load dataset
@@ -1567,9 +1566,6 @@ def main():
             use_stable_grpo=use_stable_grpo,
         )
 
-        # Compute weight deltas from initial state
-        weight_deltas = compute_weight_deltas(train_group.model, initial_state)
-
         # Log to TensorBoard
         writer.add_scalar("rl/loss", metrics["loss"], step)
         writer.add_scalar("rl/pg_loss", metrics["pg_loss"], step)
@@ -1582,6 +1578,9 @@ def main():
         writer.add_scalar("rl/advantage_mean", metrics["advantage_mean"], step)
         writer.add_scalar("rl/advantage_std", metrics.get("advantage_std", 0.0), step)
         writer.add_scalar("rl/total_samples", metrics["total_samples"], step)
+
+        # Compute weight deltas from initial state
+        weight_deltas = ray.get(train_group.compute_weight_deltas.remote())
 
         # Log weight deltas
         for key, value in weight_deltas.items():
