@@ -189,6 +189,7 @@ class VLLMRolloutEngine:
             gpu_memory_utilization=0.3,  # Reduced from 0.5
             seed=42,  # Fixed seed for determinism
             enforce_eager=True,
+            distributed_executor_backend="ray",
             tensor_parallel_size=self.tp_size,
             worker_extension_cls="torchtitan.experiments.deterministic_vllm_rl.simple_rl_ray.WorkerExtension",
         )
@@ -396,7 +397,6 @@ class TrainGroup:
         model_path,
         use_vllm_compat,
         learning_rate,
-        vllm_engine_ref,
     ):
 
         # load model
@@ -413,7 +413,6 @@ class TrainGroup:
         )
 
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=learning_rate)
-        self.vllm_engine = vllm_engine_ref
         self.model_update_group = None  # Will be initialized later
 
         # Save initial weights for tracking weight changes
@@ -439,12 +438,15 @@ class TrainGroup:
         )
         print(f"Trainer initialized weight update group: rank=0/{world_size}")
 
-    def broadcast_weights(self):
+    def broadcast_weights(self, vllm_engine):
         """
         Broadcast model weights to vLLM workers via NCCL.
 
         This converts TorchTitan weights to vLLM-compatible format and
         broadcasts each tensor to the vLLM workers.
+
+        Args:
+            vllm_engine: Ray actor reference for VLLMRolloutEngine
         """
         assert (
             self.model_update_group is not None
@@ -458,7 +460,7 @@ class TrainGroup:
             shape = tensor.shape
 
             # Initiate receive on vLLM workers (non-blocking)
-            handle = self.vllm_engine.recv_weights.remote(name, dtype_name, shape)
+            handle = vllm_engine.recv_weights.remote(name, dtype_name, shape)
 
             # Broadcast tensor from trainer (rank 0) to all workers
             self.model_update_group.broadcast(
@@ -553,135 +555,157 @@ class TrainGroup:
 
         return deltas
 
-    def rl_update_step(
-        self,
-        prompt_texts: list[str],
-        expected_answers: list[str] | None = None,
-        group_size: int = 8,
-        max_new_tokens: int = 20,
-        temperature: float = 1.0,
-        use_vllm_compat: bool = True,
-        num_rollout_batches: int = 1,
-        use_stable_grpo: bool = False,
-        grpo_beta: float = 0.1,
-        reward_fn=None,
-    ):
-        """
-        Perform one RL update step using Ray for orchestration and NCCL for weight sync.
 
-        Args:
-            prompt_texts: List of prompt strings
-            expected_answers: List of expected answers for each prompt
-            group_size: Number of samples per prompt for GRPO
-            max_new_tokens: Max tokens to generate
-            temperature: Sampling temperature
-            use_vllm_compat: Whether using vLLM-compatible model
-            num_rollout_batches: Number of rollout batches per update
-            use_stable_grpo: If True, use stable GRPO (mean-centering)
-            grpo_beta: Beta parameter for GRPO exponential weighting
-            reward_fn: Reward function (defaults to trivial_reward_function)
+def rl_update_step(
+    train_group,
+    vllm_engine,
+    tokenizer,
+    prompt_texts: list[str],
+    expected_answers: list[str] | None = None,
+    group_size: int = 8,
+    max_new_tokens: int = 20,
+    temperature: float = 1.0,
+    num_rollout_batches: int = 1,
+    use_stable_grpo: bool = False,
+    grpo_beta: float = 0.1,
+    reward_fn=None,
+):
+    """
+    Perform one RL update step using Ray for orchestration and NCCL for weight sync.
 
-        Returns:
-            metrics: Dict of training metrics
-        """
-        # Default reward function
-        if reward_fn is None:
-            reward_fn = trivial_reward_function
+    Args:
+        train_group: Ray actor reference for TrainGroup
+        vllm_engine: Ray actor reference for VLLMRolloutEngine
+        tokenizer: Tokenizer for reward computation
+        prompt_texts: List of prompt strings
+        expected_answers: List of expected answers for each prompt
+        group_size: Number of samples per prompt for GRPO
+        max_new_tokens: Max tokens to generate
+        temperature: Sampling temperature
+        num_rollout_batches: Number of rollout batches per update
+        use_stable_grpo: If True, use stable GRPO (mean-centering)
+        grpo_beta: Beta parameter for GRPO exponential weighting
+        reward_fn: Reward function (defaults to trivial_reward_function)
 
-        # Broadcast updated weights to vLLM workers via NCCL
-        self.broadcast_weights()
+    Returns:
+        metrics: Dict of training metrics
+    """
+    # Default reward function
+    if reward_fn is None:
+        reward_fn = trivial_reward_function
 
-        all_completions = []
-        all_rewards = []
-        all_advantages = []
-        total_loss = 0.0
-        batch_metrics = []
+    # Broadcast updated weights to vLLM workers via NCCL
+    ray.get(train_group.broadcast_weights.remote(vllm_engine))
 
-        for batch_idx in range(num_rollout_batches):
-            # Generate samples using vLLM
-            (
-                completions,
-                vllm_log_probs,
-                vllm_token_ids,
-                vllm_token_log_probs,
-                prompt_token_ids,
-            ) = ray.get(
-                self.vllm_engine.generate.remote(
-                    prompt_texts,
-                    max_new_tokens,
-                    temperature,
-                    n_samples_per_prompt=group_size,
-                )
+    # Multiply prompt_texts by num_rollout_batches to generate all samples at once
+    expanded_prompt_texts = prompt_texts * num_rollout_batches
+    expanded_expected_answers = (
+        expected_answers * num_rollout_batches if expected_answers else None
+    )
+
+    # Generate all samples in one call
+    (
+        completions,
+        vllm_log_probs,
+        vllm_token_ids,
+        vllm_token_log_probs,
+        prompt_token_ids,
+    ) = ray.get(
+        vllm_engine.generate.remote(
+            expanded_prompt_texts,
+            max_new_tokens,
+            temperature,
+            n_samples_per_prompt=group_size,
+        )
+    )
+
+    all_completions = []
+    all_rewards = []
+    all_advantages = []
+    total_loss = 0.0
+    batch_metrics = []
+
+    # Number of completions per batch
+    samples_per_batch = len(prompt_texts) * group_size
+
+    for batch_idx in range(num_rollout_batches):
+        # Slice the results for this batch
+        start_idx = batch_idx * samples_per_batch
+        end_idx = start_idx + samples_per_batch
+
+        batch_completions = completions[start_idx:end_idx]
+        batch_vllm_token_ids = vllm_token_ids[start_idx:end_idx]
+        batch_vllm_token_log_probs = vllm_token_log_probs[start_idx:end_idx]
+        batch_prompt_token_ids = prompt_token_ids[start_idx:end_idx]
+
+        # Compute rewards using provided reward function
+        if reward_fn == trivial_reward_function:
+            rewards = reward_fn(
+                batch_completions, tokenizer, expected_answers, group_size
+            )
+        elif reward_fn == math_reward_function:
+            rewards = reward_fn(batch_completions, expected_answers, group_size)
+        else:
+            rewards = reward_fn(batch_completions, expected_answers, group_size)
+
+        # Normalize rewards for stability (mean=0, std=1)
+        reward_mean = rewards.mean()
+        reward_std = rewards.std()
+        if reward_std > 1e-8:
+            rewards_normalized = (rewards - reward_mean) / reward_std
+        else:
+            rewards_normalized = rewards - reward_mean
+
+        # Compute advantages using GRPO
+        if use_stable_grpo:
+            advantages = compute_grpo_advantages_stable(rewards_normalized, group_size)
+        else:
+            advantages = compute_grpo_advantages(
+                rewards_normalized, group_size, beta=grpo_beta
             )
 
-            # Compute rewards using provided reward function
-            if reward_fn == trivial_reward_function:
-                rewards = reward_fn(
-                    completions, self.tokenizer, expected_answers, group_size
-                )
-            elif reward_fn == math_reward_function:
-                rewards = reward_fn(completions, expected_answers, group_size)
-            else:
-                rewards = reward_fn(completions, expected_answers, group_size)
-
-            # Normalize rewards for stability (mean=0, std=1)
-            reward_mean = rewards.mean()
-            reward_std = rewards.std()
-            if reward_std > 1e-8:
-                rewards_normalized = (rewards - reward_mean) / reward_std
-            else:
-                rewards_normalized = rewards - reward_mean
-
-            # Compute advantages using GRPO
-            if use_stable_grpo:
-                advantages = compute_grpo_advantages_stable(
-                    rewards_normalized, group_size
-                )
-            else:
-                advantages = compute_grpo_advantages(
-                    rewards_normalized, group_size, beta=grpo_beta
-                )
-
-            # Compute loss and backward pass on training model
-            loss, loss_metrics = self.forward_backward(
-                vllm_token_ids,
-                vllm_token_log_probs,
-                prompt_token_ids,
+        # Compute loss and backward pass on training model (remote call)
+        loss, loss_metrics = ray.get(
+            train_group.forward_backward.remote(
+                batch_vllm_token_ids,
+                batch_vllm_token_log_probs,
+                batch_prompt_token_ids,
                 advantages,
                 num_rollout_batches,
             )
-            total_loss += loss
+        )
+        total_loss += loss
 
-            # Track metrics
-            all_completions.extend(completions[:2])  # Sample 2 from each batch
-            all_rewards.append(reward_mean.item())
-            all_advantages.append(advantages.mean().item())
-            batch_metrics.append(loss_metrics)
+        # Track metrics
+        all_completions.extend(batch_completions[:2])  # Sample 2 from each batch
+        all_rewards.append(reward_mean.item())
+        all_advantages.append(advantages.mean().item())
+        batch_metrics.append(loss_metrics)
 
-        # Optimizer step (gradient clipping + weight update)
-        self.optimizer_step()
+    # Optimizer step (gradient clipping + weight update) - remote call
+    ray.get(train_group.optimizer_step.remote())
 
-        # Aggregate metrics across batches
-        avg_reward = sum(all_rewards) / len(all_rewards)
-        avg_advantage = sum(all_advantages) / len(all_advantages)
+    # Aggregate metrics across batches
+    avg_reward = sum(all_rewards) / len(all_rewards)
+    avg_advantage = sum(all_advantages) / len(all_advantages)
 
-        # Use metrics from last batch for detailed stats
-        final_metrics = batch_metrics[-1]
+    # Use metrics from last batch for detailed stats
+    final_metrics = batch_metrics[-1]
 
-        # Return aggregated metrics
-        metrics = {
-            "loss": total_loss,
-            "reward_mean": avg_reward,
-            "reward_std": batch_metrics[-1].get("reward_std", 0.0),
-            "advantage_mean": avg_advantage,
-            "advantage_std": batch_metrics[-1].get("advantage_std", 0.0),
-            "sample_completions": all_completions[:2],  # First 2 for inspection
-            "num_rollout_batches": num_rollout_batches,
-            "total_samples": len(prompt_texts) * group_size * num_rollout_batches,
-            **final_metrics,  # Include final batch metrics
-        }
+    # Return aggregated metrics
+    metrics = {
+        "loss": total_loss,
+        "reward_mean": avg_reward,
+        "reward_std": batch_metrics[-1].get("reward_std", 0.0),
+        "advantage_mean": avg_advantage,
+        "advantage_std": batch_metrics[-1].get("advantage_std", 0.0),
+        "sample_completions": all_completions[:2],  # First 2 for inspection
+        "num_rollout_batches": num_rollout_batches,
+        "total_samples": len(prompt_texts) * group_size * num_rollout_batches,
+        **final_metrics,  # Include final batch metrics
+    }
 
-        return metrics
+    return metrics
 
 
 def download_and_convert_model(
@@ -1312,7 +1336,7 @@ def main():
 
     # Initialize persistent vLLM engine for rollouts
     print(f"\nInitializing vLLM engine for rollouts (TP size: {vllm_tp_size})...")
-    vllm_engine = VLLMRolloutEngine.options(num_gpus=vllm_tp_size).remote(
+    vllm_engine = VLLMRolloutEngine.options(num_gpus=0).remote(
         model_path, tp_size=vllm_tp_size
     )
 
@@ -1323,7 +1347,6 @@ def main():
         model_path=model_path,
         use_vllm_compat=use_vllm_compat,
         learning_rate=learning_rate,
-        vllm_engine_ref=vllm_engine,
     )
 
     # Set up weight update groups (NCCL communication)
@@ -1353,6 +1376,11 @@ def main():
     # Wait for both vLLM workers and training actor to join
     ray.get([handle, train_handle])
     print("✓ Weight update groups initialized")
+
+    # Load tokenizer for reward computation
+    print("\nLoading tokenizer...")
+    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+    print("✓ Tokenizer loaded")
 
     # Load dataset
     print("\n" + "=" * 80)
@@ -1411,19 +1439,19 @@ def main():
     from tqdm import tqdm
 
     for step in tqdm(range(num_steps), desc="Training"):
-        metrics = ray.get(
-            train_group.rl_update_step.remote(
-                prompt_texts,
-                expected_answers=expected_answers,
-                group_size=group_size,
-                max_new_tokens=20 if not use_real_dataset else 100,
-                temperature=1.0,
-                use_vllm_compat=use_vllm_compat,
-                num_rollout_batches=num_rollout_batches,
-                reward_fn=reward_fn,
-                grpo_beta=grpo_beta,
-                use_stable_grpo=use_stable_grpo,
-            )
+        metrics = rl_update_step(
+            train_group,
+            vllm_engine,
+            tokenizer,
+            prompt_texts,
+            expected_answers=expected_answers,
+            group_size=group_size,
+            max_new_tokens=20 if not use_real_dataset else 100,
+            temperature=1.0,
+            num_rollout_batches=num_rollout_batches,
+            reward_fn=reward_fn,
+            grpo_beta=grpo_beta,
+            use_stable_grpo=use_stable_grpo,
         )
 
         # Log to TensorBoard
