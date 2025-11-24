@@ -15,6 +15,17 @@ This demonstrates:
 5. Computing advantages using GRPO-style group ranking
 6. Performing a policy gradient update on TorchTitan model
 7. Optional real dataset support (GSM8K math dataset)
+8. Distributed training with TorchTitan parallelisms (TP, FSDP, DDP)
+
+Training modes (all use RayTrainWorker with torchtitan):
+- Single GPU: Set tp=1, fsdp=1, ddp=1 (1 worker, no parallelism)
+- Distributed: Set tp/fsdp/ddp > 1 (multiple workers with TP/FSDP/DDP)
+
+Example configs:
+- Single GPU:      tp=1, fsdp=1, ddp=1  (1 GPU)
+- Tensor Parallel: tp=2, fsdp=1, ddp=1  (2 GPUs, model split)
+- FSDP:            tp=1, fsdp=2, ddp=1  (2 GPUs, params sharded)
+- Combined:        tp=2, fsdp=2, ddp=1  (4 GPUs, TP + FSDP)
 """
 
 import os
@@ -66,7 +77,7 @@ def stateless_init_process_group(master_address, master_port, rank, world_size, 
     """
     from vllm.distributed.device_communicators.pynccl import PyNcclCommunicator
     from vllm.distributed.utils import StatelessProcessGroup
-
+    print(f"DEBUG: process group rank={rank}/{world_size}")
     pg = StatelessProcessGroup.create(
         host=master_address, port=master_port, rank=rank, world_size=world_size
     )
@@ -88,7 +99,7 @@ class WorkerExtension:
             world_size: Total number of processes (trainer + all vLLM workers)
         """
         from vllm.distributed.parallel_state import get_world_group
-
+        print(f"DEBUG: vllm init weight rank={get_world_group().rank}")
         # Get this worker's rank within vLLM's TP group and add offset
         rank = get_world_group().rank + rank_offset
 
@@ -191,7 +202,7 @@ class VLLMRolloutEngine:
             enforce_eager=True,
             distributed_executor_backend="ray",
             tensor_parallel_size=self.tp_size,
-            worker_extension_cls="torchtitan.experiments.deterministic_vllm_rl.simple_rl_ray.WorkerExtension",
+            worker_extension_cls="torchtitan.experiments.wide_ep_rl.simple_rl_ray.WorkerExtension",
         )
 
     def update_weights(self, vllm_compat_state: dict) -> None:
@@ -271,7 +282,7 @@ class VLLMRolloutEngine:
                 seed=42,  # Fixed seed for determinism
                 enforce_eager=True,
                 tensor_parallel_size=self.tp_size,
-                worker_extension_cls=WorkerExtension,
+                worker_extension_cls="torchtitan.experiments.wide_ep_rl.simple_rl_ray.WorkerExtension",
             )
             print("✓ Created new vLLM engine")
         else:
@@ -389,46 +400,105 @@ def dtype_to_str(dtype):
         raise ValueError(f"Unsupported dtype: {dtype}")
 
 
-@ray.remote(num_gpus=1)
-class TrainGroup:
-    def __init__(
-        self,
-        titan_checkpoint_path,
-        model_path,
-        use_vllm_compat,
-        learning_rate,
-    ):
+class NoOpDataLoader:
+    """Minimal no-op dataloader for RL training (no dataset needed)."""
+    def __iter__(self):
+        return iter([])
+    
+    def state_dict(self):
+        return {}
+    
+    def load_state_dict(self, sd):
+        pass
 
-        # load model
-        self.model = load_model(
-            titan_checkpoint_path, model_path, use_vllm_compat=use_vllm_compat
-        )
-        self.device = torch.device(torch.cuda.current_device())
-        self.model = self.model.to(self.device)
-        self.model.train()
 
-        # load tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True
-        )
+def build_noop_dataloader(**kwargs):
+    """No-op dataloader builder for RL training."""
+    return NoOpDataLoader()
 
-        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=learning_rate)
-        self.model_update_group = None  # Will be initialized later
 
-        # Save initial weights for tracking weight changes
-        self.initial_state = {
-            name: param.clone().cpu() for name, param in self.model.state_dict().items()
-        }
-
-    def init_weight_update_group(self, master_address, master_port, world_size):
+@ray.remote
+class RayTrainWorker:
+    """Distributed training worker using torchtitan parallelisms (TP, FSDP, DDP)."""
+    
+    def __init__(self, job_config, world_size, rank, master_addr, master_port):
+        import os as _os
+        from torchtitan.train import Trainer
+        import torchtitan.protocols.train_spec as train_spec_module
+        
+        # Store os module for later use
+        self.os = _os
+        
+        # TODO: investigate local ranks whatnot.
+        # Set environment variables for torch.distributed
+        _os.environ["WORLD_SIZE"] = str(world_size)
+        _os.environ["RANK"] = str(rank)
+        _os.environ["LOCAL_RANK"] = "0"  # Each Ray actor gets its own GPU
+        _os.environ["MASTER_ADDR"] = master_addr
+        _os.environ["MASTER_PORT"] = str(master_port)
+        
+        # Store job config
+        self.job_config = job_config
+        
+        # Patch train spec to use no-op dataloader (RL doesn't need dataloaders)
+        original_get_train_spec = train_spec_module.get_train_spec
+        def patched_get_train_spec(model_name):
+            spec = original_get_train_spec(model_name)
+            spec.build_dataloader_fn = build_noop_dataloader
+            return spec
+        train_spec_module.get_train_spec = patched_get_train_spec
+        
+        # Initialize parent Trainer
+        self.trainer = Trainer(self.job_config)
+        self.trainer.checkpointer.load()
+        self.device = self.trainer.device
+        self.model_update_group = None
+        
+        # Save initial weights (clone to CPU for tracking)
+        self.initial_state = self._get_model_state_dict(clone=True, to_cpu=True)
+        
+        print(f"RayTrainWorker initialized: rank={rank}/{world_size}")
+    
+    def _get_model_state_dict(self, clone: bool = False, to_cpu: bool = False):
         """
-        Initialize PyNcclCommunicator for broadcasting weights to vLLM workers.
-
+        Get model state dict, handling both FSDP and TP.
+        
         Args:
-            master_address: IP address for rendezvous
-            master_port: Port for rendezvous
-            world_size: Total processes (1 trainer + N vLLM workers)
+            clone: If True, clone tensors (for tracking weight changes)
+            to_cpu: If True, move tensors to CPU (for tracking weight changes)
+        
+        Returns:
+            State dict with model parameters
         """
+        from torch.distributed.checkpoint.state_dict import (
+            get_model_state_dict,
+            StateDictOptions,
+        )
+        
+        model = self.trainer.model_parts[0]
+        
+        # Use PyTorch DCP's get_model_state_dict which handles both FSDP and TP
+        # This will properly gather full state across TP ranks on rank 0
+        state_dict = get_model_state_dict(
+            model,
+            options=StateDictOptions(
+                full_state_dict=True,  # Gather full model across TP/FSDP
+                cpu_offload=to_cpu,    # Offload to CPU if requested
+            )
+        )
+        
+        # Apply clone if requested (CPU offload is already handled above)
+        if clone:
+            result = {}
+            for k, v in state_dict.items():
+                result[k] = v.clone()
+            return result
+        else:
+            return state_dict
+    
+    def init_weight_update_group(self, master_address, master_port, world_size):
+        """Initialize NCCL for weight broadcasting."""
+        rank = int(self.os.environ["RANK"])
         self.model_update_group = stateless_init_process_group(
             master_address=master_address,
             master_port=master_port,
@@ -439,37 +509,24 @@ class TrainGroup:
         print(f"Trainer initialized weight update group: rank=0/{world_size}")
 
     def broadcast_weights(self, vllm_engine):
-        """
-        Broadcast model weights to vLLM workers via NCCL.
-
-        This converts TorchTitan weights to vLLM-compatible format and
-        broadcasts each tensor to the vLLM workers.
-
-        Args:
-            vllm_engine: Ray actor reference for VLLMRolloutEngine
-        """
-        assert (
-            self.model_update_group is not None
-        ), "Call init_weight_update_group first"
-
-        titan_state = self.model.state_dict()
+        """Broadcast model weights to vLLM workers."""
+        assert self.model_update_group is not None, "Call init_weight_update_group first"
+        
+        # Get state dict without cloning (more efficient for broadcasting)
+        titan_state = self._get_model_state_dict()
         vllm_compat_state = torchtitan_to_vllm(titan_state)
-
+        
         for name, tensor in vllm_compat_state.items():
             dtype_name = dtype_to_str(tensor.dtype)
             shape = tensor.shape
-
-            # Initiate receive on vLLM workers (non-blocking)
+            tensor = tensor.to(self.device)
+            
             handle = vllm_engine.recv_weights.remote(name, dtype_name, shape)
-
-            # Broadcast tensor from trainer (rank 0) to all workers
             self.model_update_group.broadcast(
                 tensor, src=0, stream=torch.cuda.current_stream()
             )
-
-            # Wait for vLLM workers to complete
             ray.get(handle)
-
+    
     def forward_backward(
         self,
         vllm_token_ids,
@@ -477,74 +534,73 @@ class TrainGroup:
         prompt_token_ids,
         advantages,
         num_rollout_batches,
+        kl_coef=0.1,
+        ppo_clip_eps=0.2,
+        entropy_coef=0.01,
     ):
-        loss, loss_metrics = compute_policy_gradient_loss_vllm(
-            self.model,
-            vllm_token_ids,
-            vllm_token_log_probs,
-            prompt_token_ids,
-            advantages,
-            kl_coef=0.1,
-        )
+        """Compute RL loss and backward pass."""
+        model = self.trainer.model_parts[0]
+        
+        # Compute loss with distributed training contexts
+        with self.trainer.train_context(None), self.trainer.maybe_enable_amp:
+            loss, metrics = compute_policy_gradient_loss_vllm(
+                model,
+                vllm_token_ids,
+                vllm_token_log_probs,
+                prompt_token_ids,
+                advantages,
+                kl_coef=kl_coef,
+                ppo_clip_eps=ppo_clip_eps,
+                entropy_coef=entropy_coef,
+            )
+        
+        # Scale loss for gradient accumulation
         loss = loss / num_rollout_batches
         loss.backward()
-
-        return loss.item(), loss_metrics
-
+        
+        return loss.item(), metrics
+    
     def optimizer_step(self):
+        """Update weights with gradient clipping."""
         # Gradient clipping
-        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+        torch.nn.utils.clip_grad_norm_(
+            [p for m in self.trainer.model_parts for p in m.parameters()],
+            max_norm=1.0,
+        )
 
         # Update weights
-        self.optimizer.step()
-
-        self.optimizer.zero_grad()
-
-    def compute_weight_deltas(self) -> dict:
-        """
-        Compute weight changes from initial state based on magnitude (L2 norm).
-
-        Returns:
-            Dictionary of weight delta statistics by module
-        """
-
+        self.trainer.optimizers.step()
+        self.trainer.optimizers.zero_grad()
+    
+    def compute_weight_deltas(self):
+        """Compute weight changes from initial state."""
         deltas = {}
         module_stats = {}
-
+        
         with torch.no_grad():
-            current_state = self.model.state_dict()
-
+            # Get current state (clone to CPU for comparison with initial state)
+            current_state = self._get_model_state_dict(clone=True, to_cpu=True)
+            
             for name, current_param in current_state.items():
                 if name not in self.initial_state:
                     continue
-
-                # Move current param to CPU to compare with initial (avoid GPU OOM)
-                current_param_cpu = current_param.cpu()
+                
                 initial_param = self.initial_state[name]
-                delta = current_param_cpu - initial_param
-
-                # Extract module name (e.g., "layers.0.attention.wq" -> "layers.0")
+                delta = current_param - initial_param
+                
                 parts = name.split(".")
-                if len(parts) >= 2:
-                    module_name = ".".join(parts[:2])
-                else:
-                    module_name = parts[0]
-
-                # Compute magnitude (L2 norm) of change
+                module_name = ".".join(parts[:2]) if len(parts) >= 2 else parts[0]
+                
                 delta_norm = torch.linalg.vector_norm(delta).item()
-                param_norm = torch.linalg.vector_norm(current_param_cpu).item()
-
-                # Relative change: ||delta|| / ||param||
+                param_norm = torch.linalg.vector_norm(current_param).item()
                 relative_change = delta_norm / (param_norm + 1e-8)
-
-                # Accumulate module-level stats
+                
                 if module_name not in module_stats:
                     module_stats[module_name] = {"norms": [], "relative": []}
-
+                
                 module_stats[module_name]["norms"].append(delta_norm)
                 module_stats[module_name]["relative"].append(relative_change)
-
-            # Average module-level stats
+            
             for module_name, stats in module_stats.items():
                 deltas[f"weight_delta/{module_name}/magnitude"] = sum(
                     stats["norms"]
@@ -552,8 +608,168 @@ class TrainGroup:
                 deltas[f"weight_delta/{module_name}/relative_change"] = sum(
                     stats["relative"]
                 ) / len(stats["relative"])
-
+        
         return deltas
+
+
+class TrainGroup:
+    """
+    Orchestrator for distributed training workers.
+    
+    This class spawns RayTrainWorker actors with torchtitan parallelisms (TP, FSDP, DDP).
+    Works for both single-GPU (tp=1, fsdp=1, ddp=1) and multi-GPU setups.
+    
+    The orchestrator provides a simple unified API (broadcast_weights, forward_backward, 
+    optimizer_step) that works the same whether you're using 1 GPU or 100 GPUs.
+    """
+    
+    def __init__(
+        self,
+        titan_checkpoint_path,
+        model_path,
+        use_vllm_compat,
+        learning_rate,
+        tp=1,
+        fsdp=1,
+        ddp=1,
+    ):
+        """
+        Initialize training group with torchtitan parallelisms.
+        
+        Args:
+            titan_checkpoint_path: Path to model checkpoint (unused, config comes from torchtitan)
+            model_path: Path to HF model
+            use_vllm_compat: Unused (torchtitan handles model creation)
+            learning_rate: Learning rate
+            tp: Tensor parallel degree (default: 1 = no TP)
+            fsdp: FSDP degree (default: 1 = no FSDP)
+            ddp: DDP degree (default: 1 = no DDP)
+        """
+        self.tp = tp
+        self.fsdp = fsdp
+        self.ddp = ddp
+        self.num_workers = tp * fsdp * ddp
+        self.learning_rate = learning_rate
+        
+        # Always use RayTrainWorker (handles both single and multi-GPU)
+        if self.num_workers == 1:
+            print("Using single GPU training (RayTrainWorker, no parallelism)")
+        else:
+            print(f"Using distributed training: TP={tp}, FSDP={fsdp}, DDP={ddp} ({self.num_workers} GPUs)")
+        
+        self.workers = self._create_distributed_workers(
+            titan_checkpoint_path, model_path, learning_rate
+        )
+    
+    def _create_distributed_workers(self, titan_checkpoint_path, model_path, learning_rate):
+        """Create distributed training workers with torchtitan config."""
+        from vllm.utils.network_utils import get_ip
+        import socket
+        from torchtitan.config.job_config import (
+            JobConfig, Job, Model, Training, Optimizer, LRScheduler,
+            Parallelism, Checkpoint, Validation, Comm, Debug,
+            Experimental, FaultTolerance, Profiling,
+        )
+        
+        # Get master address and port
+        master_addr = get_ip()
+        
+        def get_free_port():
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(("", 0))
+                s.listen(1)
+                return s.getsockname()[1]
+        
+        master_port = get_free_port()
+        
+        # Create minimal torchtitan config (hardcoded for simplicity)
+        job_config = JobConfig(
+            job=Job(
+                description=f"RL training TP={self.tp} FSDP={self.fsdp}",
+                dump_folder="/tmp/torchtitan_rl",
+            ),
+            model=Model(
+                name="qwen3",
+                flavor="1.7B",
+                hf_assets_path=model_path,
+            ),
+            training=Training(
+                dtype="bfloat16",
+                steps=1000000,
+                local_batch_size=1,
+                global_batch_size=self.num_workers,
+                seq_len=2048,
+                max_norm=1.0,
+            ),
+            optimizer=Optimizer(
+                name="AdamW",
+                lr=learning_rate,
+            ),
+            lr_scheduler=LRScheduler(
+                warmup_steps=0,
+            ),
+            parallelism=Parallelism(
+                tensor_parallel_degree=self.tp,
+                data_parallel_shard_degree=self.fsdp,
+                data_parallel_replicate_degree=self.ddp,
+            ),
+            checkpoint=Checkpoint(
+                enable=True, 
+                initial_load_path=titan_checkpoint_path,  # Load model from checkpoint
+                initial_load_in_hf=True,
+                initial_load_model_only=True,  # Only load model weights, not optimizer/scheduler
+                load_only=True
+            ),
+            validation=Validation(enable=False),
+        )
+        
+        # Create Ray actors for each rank
+        workers = []
+        for rank in range(self.num_workers):
+            worker = RayTrainWorker.options(
+                num_gpus=1,
+                name=f"train_worker_{rank}",
+            ).remote(
+                job_config=job_config,
+                world_size=self.num_workers,
+                rank=rank,
+                master_addr=master_addr,
+                master_port=master_port,
+            )
+            workers.append(worker)
+        
+        # Wait for initialization
+        ray.get([w.__ray_ready__.remote() for w in workers])
+        print(f"✓ Initialized {self.num_workers} distributed workers")
+        
+        return workers
+    
+    def init_weight_update_group(self, master_address, master_port, world_size):
+        """Initialize weight update group (only rank 0 worker)."""
+        # Only rank 0 needs to join the weight update group for broadcasting to vLLM
+        ray.get(self.workers[0].init_weight_update_group.remote(master_address, master_port, world_size))
+    
+    def broadcast_weights(self, vllm_engine):
+        """Broadcast weights from rank 0 to vLLM."""
+        # Only rank 0 broadcasts (whether single or multi-GPU)
+        ray.get(self.workers[0].broadcast_weights.remote(vllm_engine))
+    
+    def forward_backward(self, *args, **kwargs):
+        """Forward+backward on all workers."""
+        handles = [w.forward_backward.remote(*args, **kwargs) for w in self.workers]
+        results = ray.get(handles)
+        # Return results from first worker
+        return results[0]
+    
+    def optimizer_step(self):
+        """Optimizer step on all workers."""
+        handles = [w.optimizer_step.remote() for w in self.workers]
+        results = ray.get(handles)
+        return results[0]  # Return grad norm from first worker
+    
+    def compute_weight_deltas(self):
+        """Compute weight deltas from first worker."""
+        return ray.get(self.workers[0].compute_weight_deltas.remote())
 
 
 def rl_update_step(
@@ -595,7 +811,7 @@ def rl_update_step(
         reward_fn = trivial_reward_function
 
     # Broadcast updated weights to vLLM workers via NCCL
-    ray.get(train_group.broadcast_weights.remote(vllm_engine))
+    train_group.broadcast_weights(vllm_engine)
 
     # Multiply prompt_texts by num_rollout_batches to generate all samples at once
     expanded_prompt_texts = prompt_texts * num_rollout_batches
@@ -618,7 +834,6 @@ def rl_update_step(
             n_samples_per_prompt=group_size,
         )
     )
-
     all_completions = []
     all_rewards = []
     all_advantages = []
@@ -664,15 +879,13 @@ def rl_update_step(
                 rewards_normalized, group_size, beta=grpo_beta
             )
 
-        # Compute loss and backward pass on training model (remote call)
-        loss, loss_metrics = ray.get(
-            train_group.forward_backward.remote(
-                batch_vllm_token_ids,
-                batch_vllm_token_log_probs,
-                batch_prompt_token_ids,
-                advantages,
-                num_rollout_batches,
-            )
+        # Compute loss and backward pass on training model
+        loss, loss_metrics = train_group.forward_backward(
+            batch_vllm_token_ids,
+            batch_vllm_token_log_probs,
+            batch_prompt_token_ids,
+            advantages,
+            num_rollout_batches,
         )
         total_loss += loss
 
@@ -682,8 +895,8 @@ def rl_update_step(
         all_advantages.append(advantages.mean().item())
         batch_metrics.append(loss_metrics)
 
-    # Optimizer step (gradient clipping + weight update) - remote call
-    ray.get(train_group.optimizer_step.remote())
+    # Optimizer step (gradient clipping + weight update)
+    train_group.optimizer_step()
 
     # Aggregate metrics across batches
     avg_reward = sum(all_rewards) / len(all_rewards)
@@ -743,7 +956,7 @@ def download_and_convert_model(
     save_file(titan_state, titan_checkpoint_path)
     print(f"  Saved TorchTitan weights to: {titan_checkpoint_path}")
 
-    return titan_checkpoint_path, model_path
+    return output_dir, model_path
 
 
 def load_model(checkpoint_path: str, model_path: str, use_vllm_compat: bool = True):
@@ -1291,15 +1504,31 @@ def _check_if_batch_invariant_enabled(use_stable_grpo):
 
 @ray.remote(num_cpus=4)
 def main():
-    """Simple RL training loop using vLLM for fast rollouts."""
+    """
+    Simple RL training loop using vLLM for fast rollouts.
+    
+    Supports both single-GPU and distributed training with torchtitan parallelisms.
+    To enable distributed training, set tp/fsdp/ddp > 1 in the config below.
+    
+    Parallelism options:
+    - tp (Tensor Parallel): Splits model layers across GPUs (reduces per-GPU memory)
+    - fsdp (FSDP): Shards parameters/gradients/optimizer (most memory efficient)
+    - ddp (DDP): Replicates full model (higher throughput if model fits in memory)
+    - Total training GPUs = tp × fsdp × ddp
+    """
 
     # ========== Config ==========
     model_name = "Qwen/Qwen3-1.7B"  # HuggingFace model name
     cache_dir = "/mnt/local_storage/models"
     output_dir = "/mnt/local_storage/converted"
 
-    # Parallelism config
+    # Parallelism config (tweak these for distributed training)
+    tp = 2  # Tensor parallel degree (e.g., 2 = split model across 2 GPUs)
+    fsdp = 1  # FSDP degree (e.g., 2 = shard parameters across 2 GPUs)
+    ddp = 1  # DDP degree (e.g., 2 = replicate model on 2 GPUs)
     vllm_tp_size = 2  # vLLM tensor parallel size (number of GPUs for vLLM)
+    train_world_size = tp * fsdp * ddp
+
 
     # Training config
     group_size = 8  # Samples per prompt for GRPO (increased from 4)
@@ -1320,6 +1549,16 @@ def main():
     num_dataset_samples = 10  # Number of prompts from dataset
 
     _check_if_batch_invariant_enabled(use_stable_grpo)
+    
+    # Print parallelism config
+    num_train_gpus = tp * fsdp * ddp
+    print("\n" + "=" * 80)
+    print("Training Configuration")
+    print("=" * 80)
+    print(f"Training GPUs: {num_train_gpus} (TP={tp}, FSDP={fsdp}, DDP={ddp})")
+    print(f"vLLM GPUs: {vllm_tp_size}")
+    print(f"Total GPUs: {num_train_gpus + vllm_tp_size}")
+    print("=" * 80)
 
     # Download and convert model
     print("=" * 80)
@@ -1340,41 +1579,43 @@ def main():
         model_path, tp_size=vllm_tp_size
     )
 
-    # Create TrainGroup for training
+    # Create TrainGroup for training (now an orchestrator)
     print("\nInitializing TrainGroup...")
-    train_group = TrainGroup.remote(
-        titan_checkpoint_path=titan_checkpoint_path,
+    train_group = TrainGroup(
+        titan_checkpoint_path=model_path,
         model_path=model_path,
         use_vllm_compat=use_vllm_compat,
         learning_rate=learning_rate,
+        tp=tp,
+        fsdp=fsdp,
+        ddp=ddp,
     )
 
     # Set up weight update groups (NCCL communication)
+    # Only rank 0 training worker + all vLLM workers participate
     print("\nSetting up weight update groups...")
     from vllm.utils.network_utils import get_ip, get_open_port
 
     master_address = get_ip()
     master_port = get_open_port()
 
-    # world_size = trainer (1) + vLLM workers (vllm_tp_size)
-    world_size = 1 + vllm_tp_size
-    rank_offset = 1  # vLLM workers start at rank 1
+    # world_size = 1 training worker (rank 0) + vLLM workers
+    weight_update_world_size = 1 + vllm_tp_size
+    vllm_rank_offset = 1  # vLLM workers start at rank 1
 
     # Initialize weight update group on vLLM workers
     print(
         f"Initializing vLLM workers with master_address={master_address}, master_port={master_port}"
     )
     handle = vllm_engine.init_weight_update_group.remote(
-        master_address, master_port, rank_offset, world_size
+        master_address, master_port, vllm_rank_offset, weight_update_world_size
     )
 
-    # Initialize weight update group on training process
-    train_handle = train_group.init_weight_update_group.remote(
-        master_address, master_port, world_size
-    )
+    # Initialize weight update group on training worker rank 0
+    train_group.init_weight_update_group(master_address, master_port, weight_update_world_size)
 
-    # Wait for both vLLM workers and training actor to join
-    ray.get([handle, train_handle])
+    # Wait for vLLM workers to join
+    ray.get(handle)
     print("✓ Weight update groups initialized")
 
     # Load tokenizer for reward computation
@@ -1468,7 +1709,7 @@ def main():
         writer.add_scalar("rl/total_samples", metrics["total_samples"], step)
 
         # Compute weight deltas from initial state
-        weight_deltas = ray.get(train_group.compute_weight_deltas.remote())
+        weight_deltas = train_group.compute_weight_deltas()
 
         # Log weight deltas
         for key, value in weight_deltas.items():
