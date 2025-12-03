@@ -187,7 +187,7 @@ def torchtitan_to_vllm(titan_state: dict[str, torch.Tensor]) -> dict[str, torch.
             else:
                 print(f"Warning: No mapping found for {titan_key}")
 
-    print(f"Converted to {len(vllm_state)} vLLM weights")
+    # print(f"Converted to {len(vllm_state)} vLLM weights")
     return vllm_state
 
 

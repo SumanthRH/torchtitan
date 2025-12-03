@@ -56,33 +56,122 @@ from vllm.model_executor.layers.batch_invariant import init_batch_invariance
 init_batch_invariance()
 
 
-def stateless_init_process_group(master_address, master_port, rank, world_size, device):
+# def stateless_init_process_group(master_address, master_port, rank, world_size, device):
+#     """
+#     Create a StatelessProcessGroup for weight updates.
+
+#     vLLM provides StatelessProcessGroup to create a process group
+#     without interfering with the global process group in torch.distributed.
+#     This is necessary because vLLM workers already have their own process group
+#     for tensor parallelism.
+
+#     Args:
+#         master_address: IP address of rank 0 process
+#         master_port: Port for rendezvous
+#         rank: Rank of this process in the weight update group
+#         world_size: Total number of processes in the group
+#         device: torch.device for NCCL operations
+
+#     Returns:
+#         PyNcclCommunicator instance for NCCL operations
+#     """
+#     from vllm.distributed.device_communicators.pynccl import PyNcclCommunicator
+#     from vllm.distributed.utils import StatelessProcessGroup
+#     print(f"DEBUG: process group rank={rank}/{world_size}")
+#     pg = StatelessProcessGroup.create(
+#         host=master_address, port=master_port, rank=rank, world_size=world_size
+#     )
+#     pynccl = PyNcclCommunicator(pg, device=device)
+#     return pynccl
+
+from torch.distributed.distributed_c10d import (
+    Backend,
+    PrefixStore,
+    Store,
+    _new_process_group_helper,
+    _world,
+    default_pg_timeout,
+    rendezvous,
+)
+
+import ipaddress
+
+from typing import Optional, Any, Union
+
+def get_tcp_url(host: str, port: int) -> str:
     """
-    Create a StatelessProcessGroup for weight updates.
-
-    vLLM provides StatelessProcessGroup to create a process group
-    without interfering with the global process group in torch.distributed.
-    This is necessary because vLLM workers already have their own process group
-    for tensor parallelism.
-
+    Formats the TCP URL for the given host and port,
+    handling IPv6 addresses correctly.
     Args:
-        master_address: IP address of rank 0 process
-        master_port: Port for rendezvous
-        rank: Rank of this process in the weight update group
-        world_size: Total number of processes in the group
-        device: torch.device for NCCL operations
-
+        host (str): The hostname or IP address.
+        port (int): The port number.
     Returns:
-        PyNcclCommunicator instance for NCCL operations
+        str: The formatted TCP URL.
     """
-    from vllm.distributed.device_communicators.pynccl import PyNcclCommunicator
-    from vllm.distributed.utils import StatelessProcessGroup
-    print(f"DEBUG: process group rank={rank}/{world_size}")
-    pg = StatelessProcessGroup.create(
-        host=master_address, port=master_port, rank=rank, world_size=world_size
+    try:
+        if isinstance(ipaddress.ip_address(host), ipaddress.IPv6Address):
+            return f"tcp://[{host}]:{port}"
+    except ValueError:
+        # not a literal IP, probably a hostname
+        pass
+    return f"tcp://{host}:{port}"
+
+
+def init_custom_process_group(
+    backend: Union[str, Backend] = None,
+    init_method: Optional[str] = None,
+    timeout: Optional[Any] = None,
+    world_size: int = -1,
+    rank: int = -1,
+    store: Optional[Store] = None,
+    group_name: str = None,
+    pg_options: Optional[Any] = None,
+):
+    assert (store is None) or (init_method is None), "Cannot specify both init_method and store."
+
+    if store is not None:
+        assert world_size > 0, "world_size must be positive if using store"
+        assert rank >= 0, "rank must be non-negative if using store"
+    elif init_method is None:
+        init_method = "env://"
+
+    if backend:
+        backend = Backend(backend)
+    else:
+        backend = Backend("undefined")
+
+    if timeout is None:
+        timeout = default_pg_timeout
+
+    # backward compatible API
+    if store is None:
+        rendezvous_iterator = rendezvous(init_method, rank, world_size, timeout=timeout)
+        store, rank, world_size = next(rendezvous_iterator)
+        store.set_timeout(timeout)
+
+        # Use a PrefixStore to avoid accidental overrides of keys used by
+        # different systems (e.g. RPC) in case the store is multi-tenant.
+        store = PrefixStore(group_name, store)
+
+    # NOTE: The pg_options parameter was renamed into backend_options in PyTorch 2.6.0
+    # https://github.com/pytorch/pytorch/commit/a0c7029a75628cd5fa8df83c0de0ea98ee7fd844
+    # We need to determine the appropriate parameter name based on PyTorch version
+    pg_options_param_name = "backend_options" if str(torch.__version__) >= "2.6" else "pg_options"
+    pg, _ = _new_process_group_helper(
+        world_size,
+        rank,
+        [],
+        backend,
+        store,
+        group_name=group_name,
+        **{pg_options_param_name: pg_options},
+        timeout=timeout,
     )
-    pynccl = PyNcclCommunicator(pg, device=device)
-    return pynccl
+
+    _world.pg_group_ranks[pg] = {i: i for i in range(world_size)}
+
+    return pg
+
 
 
 class WorkerExtension:
@@ -104,14 +193,15 @@ class WorkerExtension:
         rank = get_world_group().rank + rank_offset
 
         # Create StatelessProcessGroup for weight updates
-        self.model_update_group = stateless_init_process_group(
-            master_address,
-            master_port,
-            rank,
-            world_size,
-            self.device,
+        self.model_update_group = init_custom_process_group(
+            backend="nccl",
+            init_method=get_tcp_url(master_address, master_port),
+            world_size=world_size,
+            rank=rank,
+            group_name="vllm_weight_update_group",
         )
         print(f"Worker initialized weight update group: rank={rank}/{world_size}")
+        return rank
 
     def recv_weights(self, name, dtype_name, shape):
         """
@@ -127,9 +217,10 @@ class WorkerExtension:
 
         # Allocate buffer and receive from trainer (src=0)
         weight = torch.empty(shape, dtype=dtype, device="cuda")
-        self.model_update_group.broadcast(
-            weight, src=0, stream=torch.cuda.current_stream()
-        )
+        # self.model_update_group.broadcast(
+        #     weight, src=0, stream=torch.cuda.current_stream()
+        # )
+        torch.distributed.broadcast(weight, 0, group=self.model_update_group)
 
         # Load into vLLM model
         self.model_runner.model.load_weights(weights=[(name, weight)])
@@ -451,11 +542,15 @@ class RayTrainWorker:
         # Initialize parent Trainer
         self.trainer = Trainer(self.job_config)
         self.trainer.checkpointer.load()
+        self.optimizer = torch.optim.Adam(self.trainer.model_parts[0].parameters(), lr=1e-5)
         self.device = self.trainer.device
         self.model_update_group = None
         
-        # Save initial weights (clone to CPU for tracking)
-        self.initial_state = self._get_model_state_dict(clone=True, to_cpu=True)
+        # Save initial weights (clone local shards to CPU for tracking)
+        self.initial_state = {
+            name: param.clone().cpu() 
+            for name, param in self.trainer.model_parts[0].state_dict().items()
+        }
         
         print(f"RayTrainWorker initialized: rank={rank}/{world_size}")
     
@@ -499,12 +594,12 @@ class RayTrainWorker:
     def init_weight_update_group(self, master_address, master_port, world_size):
         """Initialize NCCL for weight broadcasting."""
         rank = int(self.os.environ["RANK"])
-        self.model_update_group = stateless_init_process_group(
-            master_address=master_address,
-            master_port=master_port,
-            rank=0,  # Trainer is always rank 0
+        self.model_update_group = init_custom_process_group(
+            backend="nccl",
+            init_method=get_tcp_url(master_address, master_port),
             world_size=world_size,
-            device=self.device,
+            rank=rank,
+            group_name="vllm_weight_update_group",
         )
         print(f"Trainer initialized weight update group: rank=0/{world_size}")
 
@@ -530,12 +625,12 @@ class RayTrainWorker:
         
         from torch.distributed.tensor import DTensor
 
-        rank = self.os.environ["RANK"]
+        rank = int(self.os.environ["RANK"])
         params = self.trainer.model_parts[0].state_dict()
         for name, param in params.items():
+            param = param.to(self.device).full_tensor() if isinstance(param, DTensor) else param
             dtype_name = dtype_to_str(param.dtype)
             shape = param.shape
-            param = param.to(self.device).full_tensor() if isinstance(param, DTensor) else param
             name, param = tuple(torchtitan_to_vllm({name: param}).items())[0]
             if rank == 0:
                 handle = vllm_engine.recv_weights.remote(name, dtype_name, shape)
@@ -556,6 +651,7 @@ class RayTrainWorker:
         entropy_coef=0.01,
     ):
         """Compute RL loss and backward pass."""
+        self.optimizer.zero_grad()
         model = self.trainer.model_parts[0]
         #TODO:current simple fsdp sharding logic assumes tp ==1, need to handle tp > 1, 
         # Shard inputs for FSDP (assuming tp=1)
@@ -596,37 +692,68 @@ class RayTrainWorker:
     
     def optimizer_step(self):
         """Update weights with gradient clipping."""
+        # # DEBUG: Check gradients before clipping
+        # model_params = list(self.trainer.model_parts[0].parameters())
+        # total_params = len(model_params)
+        # params_with_grad = sum(1 for p in model_params if p.grad is not None)
+        # nonzero_grads = sum(1 for p in model_params if p.grad is not None and p.grad.abs().sum() > 0)
+        # print(f"DEBUG optimizer_step: {params_with_grad}/{total_params} params have .grad, {nonzero_grads} have nonzero grad", flush=True)
+        
+        # # DEBUG: Sample gradient norms
+        # grad_norms = []
+        # for i, p in enumerate(model_params):
+        #     if p.grad is not None:
+        #         grad_norm = p.grad.norm().item()
+        #         grad_norms.append(grad_norm)
+        #         if i < 5:  # Print first 5
+        #             print(f"DEBUG param[{i}] grad_norm={grad_norm:.6e}", flush=True)
+        # if grad_norms:
+        #     print(f"DEBUG grad_norm stats: min={min(grad_norms):.6e}, max={max(grad_norms):.6e}, mean={sum(grad_norms)/len(grad_norms):.6e}", flush=True)
+        
+        # # DEBUG: Check optimizer param references match model params
+        # optimizer_params = set()
+        # for pg in self.optimizer.param_groups:
+        #     for p in pg['params']:
+        #         optimizer_params.add(id(p))
+        # model_param_ids = set(id(p) for p in model_params)
+        # matching = len(optimizer_params & model_param_ids)
+        # print(f"DEBUG optimizer has {len(optimizer_params)} params, model has {len(model_param_ids)} params, {matching} match by id", flush=True)
+        # if optimizer_params != model_param_ids:
+        #     print("DEBUG WARNING: optimizer and model params DO NOT match!", flush=True)
+        # else:
+        #     print("DEBUG OK: optimizer params point to same objects as model params", flush=True)
+        
         # Gradient clipping
         torch.nn.utils.clip_grad_norm_(
-            [p for m in self.trainer.model_parts for p in m.parameters()],
+            self.trainer.model_parts[0].parameters(),
             max_norm=1.0,
         )
 
         # Update weights
-        self.trainer.optimizers.step()
-        self.trainer.optimizers.zero_grad()
+        self.optimizer.step()
+        
     
     def compute_weight_deltas(self):
-        """Compute weight changes from initial state."""
+        """Compute weight changes from initial state using local shards only."""
         deltas = {}
         module_stats = {}
         
         with torch.no_grad():
-            # Get current state (clone to CPU for comparison with initial state)
-            current_state = self._get_model_state_dict(clone=True, to_cpu=True)
-            
-            for name, current_param in current_state.items():
+            # Compare local shards directly (works in multi-GPU settings)
+            for name, current_param in self.trainer.model_parts[0].state_dict().items():
                 if name not in self.initial_state:
                     continue
                 
                 initial_param = self.initial_state[name]
-                delta = current_param - initial_param
+                # Move current param to CPU for comparison
+                current_cpu = current_param.cpu()
+                delta = current_cpu - initial_param
                 
                 parts = name.split(".")
                 module_name = ".".join(parts[:2]) if len(parts) >= 2 else parts[0]
                 
                 delta_norm = torch.linalg.vector_norm(delta).item()
-                param_norm = torch.linalg.vector_norm(current_param).item()
+                param_norm = torch.linalg.vector_norm(current_cpu).item()
                 relative_change = delta_norm / (param_norm + 1e-8)
                 
                 if module_name not in module_stats:
@@ -1654,7 +1781,7 @@ def main():
     train_group.init_weight_update_group(master_address, master_port, weight_update_world_size)
 
     # Wait for vLLM workers to join
-    ray.get(handle)
+    print(f"DEBUG: vllm weight update group initialized: {ray.get(handle)}")
     print("✓ Weight update groups initialized")
 
     # Load tokenizer for reward computation
@@ -1747,19 +1874,25 @@ def main():
         writer.add_scalar("rl/advantage_std", metrics.get("advantage_std", 0.0), step)
         writer.add_scalar("rl/total_samples", metrics["total_samples"], step)
 
-        # # Compute weight deltas from initial state
-        # weight_deltas = train_group.compute_weight_deltas()
+        # Compute weight deltas from initial state
+        weight_deltas = train_group.compute_weight_deltas()
 
-        # # Log weight deltas
-        # for key, value in weight_deltas.items():
-        #     writer.add_scalar(key, value, step)
+        # Log weight deltas
+        for key, value in weight_deltas.items():
+            writer.add_scalar(key, value, step)
+
+        # Print weight delta norms
+        magnitude_deltas = {k: v for k, v in weight_deltas.items() if "magnitude" in k}
+        if magnitude_deltas:
+            print(f"  Weight deltas: {magnitude_deltas}")
 
         print(
             f"\nStep {step:3d} | Loss: {metrics['loss']:.4f} | "
             f"Reward: {metrics['reward_mean']:+.3f} | "
             f"Samples: {metrics['total_samples']}"
         )
-        print(f"  Sample: {metrics['sample_completions'][0][:80]}...")
+        # print(f"  Sample: {metrics['sample_completions'][0][:80]}...")
+        print(f"  Sample: {metrics['sample_completions'][0]}...")
 
         # Check for NaN/Inf (sign of instability)
         if not torch.isfinite(torch.tensor(metrics["loss"])):
