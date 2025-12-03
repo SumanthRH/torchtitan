@@ -306,7 +306,8 @@ def init_distributed(
     torch.distributed.init_process_group(
         backend=_get_distributed_backend(enable_cpu_backend),
         timeout=timedelta(seconds=comm_config.init_timeout_seconds),
-        _ranks=ranks if ranks is not None else [],
+        rank=int(os.environ["RANK"]),
+        # _ranks=ranks if ranks is not None else [],
     )
 
 

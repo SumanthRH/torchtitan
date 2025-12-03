@@ -77,7 +77,8 @@ def stateless_init_process_group(master_address, master_port, rank, world_size, 
     """
     from vllm.distributed.device_communicators.pynccl import PyNcclCommunicator
     from vllm.distributed.utils import StatelessProcessGroup
-    print(f"DEBUG: process group rank={rank}/{world_size}")
+
+    # print(f"DEBUG: process group rank={rank}/{world_size}")
     pg = StatelessProcessGroup.create(
         host=master_address, port=master_port, rank=rank, world_size=world_size
     )
@@ -99,7 +100,6 @@ class WorkerExtension:
             world_size: Total number of processes (trainer + all vLLM workers)
         """
         from vllm.distributed.parallel_state import get_world_group
-        print(f"DEBUG: vllm init weight rank={get_world_group().rank}")
         # Get this worker's rank within vLLM's TP group and add offset
         rank = get_world_group().rank + rank_offset
 
@@ -402,12 +402,13 @@ def dtype_to_str(dtype):
 
 class NoOpDataLoader:
     """Minimal no-op dataloader for RL training (no dataset needed)."""
+
     def __iter__(self):
         return iter([])
-    
+
     def state_dict(self):
         return {}
-    
+
     def load_state_dict(self, sd):
         pass
 
@@ -420,53 +421,56 @@ def build_noop_dataloader(**kwargs):
 @ray.remote
 class RayTrainWorker:
     """Distributed training worker using torchtitan parallelisms (TP, FSDP, DDP)."""
-    
+
     def __init__(self, job_config, world_size, rank, master_addr, master_port):
         import os as _os
-        from torchtitan.train import Trainer
+
         import torchtitan.protocols.train_spec as train_spec_module
-        
+        from torchtitan.train import Trainer
+
         # Store os module for later use
         self.os = _os
-        
-        # TODO: investigate local ranks whatnot.
+
+        # TODO: investigate local ranks.
         # Set environment variables for torch.distributed
         _os.environ["WORLD_SIZE"] = str(world_size)
         _os.environ["RANK"] = str(rank)
         _os.environ["LOCAL_RANK"] = "0"  # Each Ray actor gets its own GPU
         _os.environ["MASTER_ADDR"] = master_addr
         _os.environ["MASTER_PORT"] = str(master_port)
-        
+
         # Store job config
         self.job_config = job_config
-        
+
         # Patch train spec to use no-op dataloader (RL doesn't need dataloaders)
         original_get_train_spec = train_spec_module.get_train_spec
+
         def patched_get_train_spec(model_name):
             spec = original_get_train_spec(model_name)
             spec.build_dataloader_fn = build_noop_dataloader
             return spec
+
         train_spec_module.get_train_spec = patched_get_train_spec
-        
+
         # Initialize parent Trainer
         self.trainer = Trainer(self.job_config)
         self.trainer.checkpointer.load()
         self.device = self.trainer.device
         self.model_update_group = None
-        
+
         # Save initial weights (clone to CPU for tracking)
         self.initial_state = self._get_model_state_dict(clone=True, to_cpu=True)
-        
+
         print(f"RayTrainWorker initialized: rank={rank}/{world_size}")
-    
+
     def _get_model_state_dict(self, clone: bool = False, to_cpu: bool = False):
         """
         Get model state dict, handling both FSDP and TP.
-        
+
         Args:
             clone: If True, clone tensors (for tracking weight changes)
             to_cpu: If True, move tensors to CPU (for tracking weight changes)
-        
+
         Returns:
             State dict with model parameters
         """
@@ -474,19 +478,18 @@ class RayTrainWorker:
             get_model_state_dict,
             StateDictOptions,
         )
-        
+
         model = self.trainer.model_parts[0]
-        
         # Use PyTorch DCP's get_model_state_dict which handles both FSDP and TP
         # This will properly gather full state across TP ranks on rank 0
         state_dict = get_model_state_dict(
             model,
             options=StateDictOptions(
                 full_state_dict=True,  # Gather full model across TP/FSDP
-                cpu_offload=to_cpu,    # Offload to CPU if requested
-            )
+                cpu_offload=to_cpu,  # Offload to CPU if requested
+            ),
         )
-        
+
         # Apply clone if requested (CPU offload is already handled above)
         if clone:
             result = {}
@@ -495,7 +498,7 @@ class RayTrainWorker:
             return result
         else:
             return state_dict
-    
+
     def init_weight_update_group(self, master_address, master_port, world_size):
         """Initialize NCCL for weight broadcasting."""
         rank = int(self.os.environ["RANK"])
@@ -509,25 +512,27 @@ class RayTrainWorker:
         print(f"Trainer initialized weight update group: rank=0/{world_size}")
 
     def broadcast_weights(self, vllm_engine):
-        """Broadcast model weights to vLLM workers."""
-        # # assert self.model_update_group is not None, "Call init_weight_update_group first"
-        
-        # # Get state dict without cloning (more efficient for broadcasting)
+        # """Broadcast model weights to vLLM workers."""
+        # assert (
+        #     self.model_update_group is not None or self.os.environ["RANK"] != 0
+        # ), "Call init_weight_update_group first"
+        # print("DEBUG: broadcast_weights")
         # titan_state = self._get_model_state_dict()
-        # vllm_compat_state = torchtitan_to_vllm(titan_state)
-        
-        # for name, tensor in vllm_compat_state.items():
-        #     dtype_name = dtype_to_str(tensor.dtype)
-        #     shape = tensor.shape
-        #     tensor = tensor.to(self.device)
-            
-        #     handle = vllm_engine.recv_weights.remote(name, dtype_name, shape)
-        #     if self.os.environ["RANK"] == 0:
+
+        # if self.os.environ["RANK"] == 0:
+        #     vllm_compat_state = torchtitan_to_vllm(titan_state)
+        #     for name, tensor in vllm_compat_state.items():
+        #         dtype_name = dtype_to_str(tensor.dtype)
+        #         shape = tensor.shape
+        #         tensor = tensor.to(self.device)
+
+        #         handle = vllm_engine.recv_weights.remote(name, dtype_name, shape)
         #         self.model_update_group.broadcast(
         #             tensor, src=0, stream=torch.cuda.current_stream()
         #         )
         #         ray.get(handle)
-        
+
+
         from torch.distributed.tensor import DTensor
 
         rank = self.os.environ["RANK"]
@@ -536,14 +541,12 @@ class RayTrainWorker:
             dtype_name = dtype_to_str(param.dtype)
             shape = param.shape
             param = param.to(self.device).full_tensor() if isinstance(param, DTensor) else param
-            name, param = tuple(torchtitan_to_vllm({name: param}).items())[0]
             if rank == 0:
                 handle = vllm_engine.recv_weights.remote(name, dtype_name, shape)
                 torch.distributed.broadcast(param.data, 0, group=self.model_update_group)
                 ray.get(handle)
             torch.distributed.barrier()
 
-    
     def forward_backward(
         self,
         vllm_token_ids,
@@ -557,6 +560,7 @@ class RayTrainWorker:
     ):
         """Compute RL loss and backward pass."""
         model = self.trainer.model_parts[0]
+
         #TODO:current simple fsdp sharding logic assumes tp ==1, need to handle tp > 1, 
         # Shard inputs for FSDP (assuming tp=1)
         rank = int(self.os.environ["RANK"])
@@ -574,6 +578,7 @@ class RayTrainWorker:
         
         # Shard advantages tensor across batch dimension
         advantages_shard = advantages[start_idx:end_idx]
+
         # Compute loss with distributed training contexts
         with self.trainer.train_context(None):
             with self.trainer.maybe_enable_amp:
@@ -587,13 +592,13 @@ class RayTrainWorker:
                     ppo_clip_eps=ppo_clip_eps,
                     entropy_coef=entropy_coef,
                 )
-                print("DEBUG: loss backwards", flush=True)
-                # Scale loss for gradient accumulation
-                loss = loss / num_rollout_batches
-                loss.backward()
-        
+            
+            # Scale loss for gradient accumulation
+            loss = loss / num_rollout_batches
+            loss.backward()
+
         return loss.item(), metrics
-    
+
     def optimizer_step(self):
         """Update weights with gradient clipping."""
         # Gradient clipping
@@ -605,36 +610,36 @@ class RayTrainWorker:
         # Update weights
         self.trainer.optimizers.step()
         self.trainer.optimizers.zero_grad()
-    
+
     def compute_weight_deltas(self):
         """Compute weight changes from initial state."""
         deltas = {}
         module_stats = {}
-        
+
         with torch.no_grad():
             # Get current state (clone to CPU for comparison with initial state)
             current_state = self._get_model_state_dict(clone=True, to_cpu=True)
-            
+
             for name, current_param in current_state.items():
                 if name not in self.initial_state:
                     continue
-                
+
                 initial_param = self.initial_state[name]
                 delta = current_param - initial_param
-                
+
                 parts = name.split(".")
                 module_name = ".".join(parts[:2]) if len(parts) >= 2 else parts[0]
-                
+
                 delta_norm = torch.linalg.vector_norm(delta).item()
                 param_norm = torch.linalg.vector_norm(current_param).item()
                 relative_change = delta_norm / (param_norm + 1e-8)
-                
+
                 if module_name not in module_stats:
                     module_stats[module_name] = {"norms": [], "relative": []}
-                
+
                 module_stats[module_name]["norms"].append(delta_norm)
                 module_stats[module_name]["relative"].append(relative_change)
-            
+
             for module_name, stats in module_stats.items():
                 deltas[f"weight_delta/{module_name}/magnitude"] = sum(
                     stats["norms"]
@@ -642,21 +647,21 @@ class RayTrainWorker:
                 deltas[f"weight_delta/{module_name}/relative_change"] = sum(
                     stats["relative"]
                 ) / len(stats["relative"])
-        
+
         return deltas
 
 
 class TrainGroup:
     """
     Orchestrator for distributed training workers.
-    
+
     This class spawns RayTrainWorker actors with torchtitan parallelisms (TP, FSDP, DDP).
     Works for both single-GPU (tp=1, fsdp=1, ddp=1) and multi-GPU setups.
-    
-    The orchestrator provides a simple unified API (broadcast_weights, forward_backward, 
+
+    The orchestrator provides a simple unified API (broadcast_weights, forward_backward,
     optimizer_step) that works the same whether you're using 1 GPU or 100 GPUs.
     """
-    
+
     def __init__(
         self,
         titan_checkpoint_path,
@@ -669,7 +674,7 @@ class TrainGroup:
     ):
         """
         Initialize training group with torchtitan parallelisms.
-        
+
         Args:
             titan_checkpoint_path: Path to model checkpoint (unused, config comes from torchtitan)
             model_path: Path to HF model
@@ -684,38 +689,54 @@ class TrainGroup:
         self.ddp = ddp
         self.num_workers = tp * fsdp * ddp
         self.learning_rate = learning_rate
-        
+
         # Always use RayTrainWorker (handles both single and multi-GPU)
         if self.num_workers == 1:
             print("Using single GPU training (RayTrainWorker, no parallelism)")
         else:
-            print(f"Using distributed training: TP={tp}, FSDP={fsdp}, DDP={ddp} ({self.num_workers} GPUs)")
-        
+            print(
+                f"Using distributed training: TP={tp}, FSDP={fsdp}, DDP={ddp} ({self.num_workers} GPUs)"
+            )
+
         self.workers = self._create_distributed_workers(
             titan_checkpoint_path, model_path, learning_rate
         )
-    
-    def _create_distributed_workers(self, titan_checkpoint_path, model_path, learning_rate):
+
+    def _create_distributed_workers(
+        self, titan_checkpoint_path, model_path, learning_rate
+    ):
         """Create distributed training workers with torchtitan config."""
-        from vllm.utils.network_utils import get_ip
         import socket
+
         from torchtitan.config.job_config import (
-            JobConfig, Job, Model, Training, Optimizer, LRScheduler,
-            Parallelism, Checkpoint, Validation, Comm, Debug,
-            Experimental, FaultTolerance, Profiling,
+            Checkpoint,
+            Comm,
+            Debug,
+            Experimental,
+            FaultTolerance,
+            Job,
+            JobConfig,
+            LRScheduler,
+            Model,
+            Optimizer,
+            Parallelism,
+            Profiling,
+            Training,
+            Validation,
         )
-        
+        from vllm.utils.network_utils import get_ip
+
         # Get master address and port
         master_addr = get_ip()
-        
+
         def get_free_port():
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.bind(("", 0))
                 s.listen(1)
                 return s.getsockname()[1]
-        
+
         master_port = get_free_port()
-        
+
         # Create minimal torchtitan config (hardcoded for simplicity)
         job_config = JobConfig(
             job=Job(
@@ -748,15 +769,15 @@ class TrainGroup:
                 data_parallel_replicate_degree=self.ddp,
             ),
             checkpoint=Checkpoint(
-                enable=True, 
+                enable=True,
                 initial_load_path=titan_checkpoint_path,  # Load model from checkpoint
                 initial_load_in_hf=True,
                 initial_load_model_only=True,  # Only load model weights, not optimizer/scheduler
-                load_only=True
+                load_only=True,
             ),
             validation=Validation(enable=False),
         )
-        
+
         # Create Ray actors for each rank
         workers = []
         for rank in range(self.num_workers):
@@ -771,37 +792,41 @@ class TrainGroup:
                 master_port=master_port,
             )
             workers.append(worker)
-        
+
         # Wait for initialization
         ray.get([w.__ray_ready__.remote() for w in workers])
         print(f"✓ Initialized {self.num_workers} distributed workers")
-        
+
         return workers
-    
+
     def init_weight_update_group(self, master_address, master_port, world_size):
         """Initialize weight update group (only rank 0 worker)."""
         # Only rank 0 needs to join the weight update group for broadcasting to vLLM
-        ray.get(self.workers[0].init_weight_update_group.remote(master_address, master_port, world_size))
-    
+        ray.get(
+            self.workers[0].init_weight_update_group.remote(
+                master_address, master_port, world_size
+            )
+        )
+
     def broadcast_weights(self, vllm_engine):
         """Broadcast weights from rank 0 to vLLM."""
         # Only rank 0 broadcasts (whether single or multi-GPU)
         handles = [w.broadcast_weights.remote(vllm_engine) for w in self.workers]
         ray.get(handles)
-    
+
     def forward_backward(self, *args, **kwargs):
         """Forward+backward on all workers."""
         handles = [w.forward_backward.remote(*args, **kwargs) for w in self.workers]
         results = ray.get(handles)
         # Return results from first worker
         return results[0]
-    
+
     def optimizer_step(self):
         """Optimizer step on all workers."""
         handles = [w.optimizer_step.remote() for w in self.workers]
         results = ray.get(handles)
         return results[0]  # Return grad norm from first worker
-    
+
     def compute_weight_deltas(self):
         """Compute weight deltas from first worker."""
         return ray.get(self.workers[0].compute_weight_deltas.remote())
@@ -1396,7 +1421,7 @@ def compute_policy_gradient_loss_vllm(
 
     # Track per-token differences for the first sample
     first_sample_deltas = []
-    print("DEBUG: num samples: ", len(prompt_token_ids), flush = True)
+
     for idx, (prompt_toks, gen_toks, vllm_toks_lp) in enumerate(
         zip(prompt_token_ids, vllm_token_ids, vllm_token_log_probs)
     ):
@@ -1409,7 +1434,8 @@ def compute_policy_gradient_loss_vllm(
         # Forward pass
         logits = model(full_tensor)
         if isinstance(logits, torch.distributed.tensor.DTensor):
-            logits = logits.to_local()
+            logits = logits.full_tensor()
+
         # Use F.log_softmax which is overridden by batch_invariant mode for determinism
         # Convert to float32 to match vLLM's sampler behavior (use .to() to preserve gradients)
         log_probs = F.log_softmax(logits[:, :-1, :].to(torch.float32), dim=-1)
@@ -1448,8 +1474,6 @@ def compute_policy_gradient_loss_vllm(
                         "titan_logprob_f32": titan_lp_f32.item(),
                     }
                 )
-        
-        torch.distributed.barrier()
 
     total_log_probs = torch.stack(batch_total_log_probs)
 
@@ -1545,10 +1569,10 @@ def _check_if_batch_invariant_enabled(use_stable_grpo):
 def main():
     """
     Simple RL training loop using vLLM for fast rollouts.
-    
+
     Supports both single-GPU and distributed training with torchtitan parallelisms.
     To enable distributed training, set tp/fsdp/ddp > 1 in the config below.
-    
+
     Parallelism options:
     - tp (Tensor Parallel): Splits model layers across GPUs (reduces per-GPU memory)
     - fsdp (FSDP): Shards parameters/gradients/optimizer (most memory efficient)
@@ -1567,7 +1591,6 @@ def main():
     ddp = 1  # DDP degree (e.g., 2 = replicate model on 2 GPUs)
     vllm_tp_size = 2  # vLLM tensor parallel size (number of GPUs for vLLM)
     train_world_size = tp * fsdp * ddp
-
 
     # Training config
     group_size = 8  # Samples per prompt for GRPO (increased from 4)
@@ -1588,7 +1611,7 @@ def main():
     num_dataset_samples = 10  # Number of prompts from dataset
 
     _check_if_batch_invariant_enabled(use_stable_grpo)
-    
+
     # Print parallelism config
     num_train_gpus = tp * fsdp * ddp
     print("\n" + "=" * 80)
@@ -1651,7 +1674,9 @@ def main():
     )
 
     # Initialize weight update group on training worker rank 0
-    train_group.init_weight_update_group(master_address, master_port, weight_update_world_size)
+    train_group.init_weight_update_group(
+        master_address, master_port, weight_update_world_size
+    )
 
     # Wait for vLLM workers to join
     ray.get(handle)
@@ -1747,6 +1772,7 @@ def main():
         writer.add_scalar("rl/advantage_std", metrics.get("advantage_std", 0.0), step)
         writer.add_scalar("rl/total_samples", metrics["total_samples"], step)
 
+        # TODO: fix compute weight deltas
         # # Compute weight deltas from initial state
         # weight_deltas = train_group.compute_weight_deltas()
 

@@ -1,0 +1,907 @@
+
+Initializing Ray...
+2025-12-02 00:01:46,367	INFO worker.py:1832 -- Connecting to existing Ray cluster at address: 10.0.153.43:6379...
+2025-12-02 00:01:46,382	INFO worker.py:2003 -- Connected to Ray cluster. View the dashboard at [1m[32mhttps://session-curkss3xjt9s133yqqj42m6lan.i.anyscaleuserdata.com [39m[22m
+2025-12-02 00:01:46,387	INFO packaging.py:380 -- Pushing file package 'gcs://_ray_pkg_ae6d18a859cf39ae2e13023962299dddfe77a627.zip' (0.12MiB) to Ray cluster...
+2025-12-02 00:01:46,388	INFO packaging.py:393 -- Successfully pushed file package 'gcs://_ray_pkg_ae6d18a859cf39ae2e13023962299dddfe77a627.zip'.
+/home/ray/anaconda3/lib/python3.12/site-packages/ray/_private/worker.py:2051: FutureWarning: Tip: In future versions of Ray, Ray will no longer override accelerator visible devices env var if num_gpus=0 or num_gpus=None (default). To enable this behavior and turn off this error message, set RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO=0
+  warnings.warn(
+[36m(main pid=693925)[0m Fetching 9 files:   0%|          | 0/9 [00:00<?, ?it/s]Fetching 9 files: 100%|██████████| 9/9 [00:00<00:00, 98048.66it/s]
+[36m(RayTrainWorker pid=694617)[0m Error running lspci: [Errno 2] No such file or directory: 'lspci', fallback to use device_name
+[36m(RayTrainWorker pid=694617)[0m Error running lspci: [Errno 2] No such file or directory: 'lspci', fallback to use device_name
+[36m(VLLMRolloutEngine pid=694620)[0m The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m 2025-12-02 00:02:24,083	INFO worker.py:1691 -- Using address 10.0.153.43:6379 set in the environment variable RAY_ADDRESS
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m 2025-12-02 00:02:24,247	INFO worker.py:1832 -- Connecting to existing Ray cluster at address: 10.0.153.43:6379...
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m 2025-12-02 00:02:24,261	INFO worker.py:2003 -- Connected to Ray cluster. View the dashboard at [1m[32mhttps://session-curkss3xjt9s133yqqj42m6lan.i.anyscaleuserdata.com [39m[22m
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m /home/ray/anaconda3/lib/python3.12/site-packages/ray/_private/worker.py:2051: FutureWarning: Tip: In future versions of Ray, Ray will no longer override accelerator visible devices env var if num_gpus=0 or num_gpus=None (default). To enable this behavior and turn off this error message, set RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO=0
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m   warnings.warn(
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m [2025-12-02 00:02:39] INFO _optional_torch_c_dlpack.py:119: JIT-compiling torch-c-dlpack-ext to cache...
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695551)[0m /home/ray/anaconda3/lib/python3.12/site-packages/tvm_ffi/_optional_torch_c_dlpack.py:161: UserWarning: Failed to JIT torch c dlpack extension, EnvTensorAllocator will not be enabled.
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695551)[0m We recommend installing via `pip install torch-c-dlpack-ext`
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695551)[0m   warnings.warn(
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m Loading safetensors checkpoint shards:   0% Completed | 0/2 [00:00<?, ?it/s]
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m Loading safetensors checkpoint shards:  50% Completed | 1/2 [00:00<00:00,  3.21it/s]
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:00<00:00,  6.41it/s]
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m 
+[36m(main pid=693925)[0m ⚠ Batch invariance NOT detected - using standard model
+[36m(main pid=693925)[0m   WARNING: Exponential GRPO may be unstable without bitwise invariance!
+[36m(main pid=693925)[0m 
+[36m(main pid=693925)[0m ================================================================================
+[36m(main pid=693925)[0m Training Configuration
+[36m(main pid=693925)[0m ================================================================================
+[36m(main pid=693925)[0m Training GPUs: 1 (TP=1, FSDP=1, DDP=1)
+[36m(main pid=693925)[0m vLLM GPUs: 2
+[36m(main pid=693925)[0m Total GPUs: 3
+[36m(main pid=693925)[0m ================================================================================
+[36m(main pid=693925)[0m ================================================================================
+[36m(main pid=693925)[0m Setting up model: Qwen/Qwen3-1.7B
+[36m(main pid=693925)[0m ================================================================================
+[36m(main pid=693925)[0m Downloading Qwen/Qwen3-1.7B from HuggingFace...
+[36m(main pid=693925)[0m   Downloaded to: /mnt/local_storage/models/models--Qwen--Qwen3-1.7B/snapshots/70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
+[36m(main pid=693925)[0m Converting weights to TorchTitan format...
+[36m(main pid=693925)[0m Loading 2 safetensors files...
+[36m(main pid=693925)[0m Loaded 311 weights from vLLM format
+[36m(main pid=693925)[0m Converted to 311 TorchTitan weights
+[36m(main pid=693925)[0m   Saved TorchTitan weights to: /mnt/local_storage/converted/qwen3_torchtitan.safetensors
+[36m(main pid=693925)[0m 
+[36m(main pid=693925)[0m Initializing vLLM engine for rollouts (TP size: 2)...
+[36m(main pid=693925)[0m 
+[36m(main pid=693925)[0m Initializing TrainGroup...
+[36m(main pid=693925)[0m Using single GPU training (RayTrainWorker, no parallelism)
+[36m(autoscaler +26s)[0m Tip: use `ray status` to view detailed cluster status. To disable these messages, set RAY_SCHEDULER_EVENTS=0.
+[36m(autoscaler +26s)[0m [workspace snapshot] New snapshot created with warning (Size: 13.21 GB, Oversize: True, Timeout: False)
+[36m(RayTrainWorker pid=694617)[0m DEBUG: RANK=0
+[36m(main pid=693925)[0m ✓ Initialized 1 distributed workers
+[36m(main pid=693925)[0m 
+[36m(main pid=693925)[0m Setting up weight update groups...
+[36m(main pid=693925)[0m Initializing vLLM workers with master_address=10.0.153.43, master_port=48505
+[36m(RayTrainWorker pid=694617)[0m RayTrainWorker initialized: rank=0/1
+[36m(VLLMRolloutEngine pid=694620)[0m INFO 12-02 00:02:16 [utils.py:253] non-default args: {'trust_remote_code': True, 'dtype': 'bfloat16', 'seed': 42, 'max_model_len': 2048, 'distributed_executor_backend': 'ray', 'tensor_parallel_size': 2, 'gpu_memory_utilization': 0.3, 'disable_log_stats': True, 'enforce_eager': True, 'worker_extension_cls': 'torchtitan.experiments.wide_ep_rl.simple_rl_ray.WorkerExtension', 'model': '/tmp/ray/session_2025-12-01_17-29-58_367918_5659/runtime_resources/working_dir_files/_ray_pkg_ae6d18a859cf39ae2e13023962299dddfe77a627/converted/vllm_temp_model'}
+[36m(VLLMRolloutEngine pid=694620)[0m INFO 12-02 00:02:16 [model.py:631] Resolved architecture: Qwen3ForCausalLM
+[36m(VLLMRolloutEngine pid=694620)[0m INFO 12-02 00:02:16 [model.py:1745] Using max model len 2048
+[36m(VLLMRolloutEngine pid=694620)[0m INFO 12-02 00:02:17 [arg_utils.py:1443] Using ray runtime env (env vars redacted): {'cgroupv2': {}, 'ray_debugger': {'working_dir': '/home/ray/default/repos/torchtitan/torchtitan/experiments/wide_ep_rl'}, 'working_dir': 'gcs://_ray_pkg_ae6d18a859cf39ae2e13023962299dddfe77a627.zip'}
+[36m(VLLMRolloutEngine pid=694620)[0m INFO 12-02 00:02:17 [scheduler.py:216] Chunked prefill is enabled with max_num_batched_tokens=16384.
+[36m(VLLMRolloutEngine pid=694620)[0m INFO 12-02 00:02:17 [vllm.py:500] Cudagraph is disabled under eager mode
+[36m(VLLMRolloutEngine pid=694620)[0m WARNING 12-02 00:02:17 [system_utils.py:103] We must use the `spawn` multiprocessing start method. Overriding VLLM_WORKER_MULTIPROC_METHOD to 'spawn'. See https://docs.vllm.ai/en/latest/usage/troubleshooting.html#python-multiprocessing for more information. Reasons: In a Ray actor and can only be spawned
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:24 [core.py:93] Initializing a V1 LLM engine (v0.11.2) with config: model='/tmp/ray/session_2025-12-01_17-29-58_367918_5659/runtime_resources/working_dir_files/_ray_pkg_ae6d18a859cf39ae2e13023962299dddfe77a627/converted/vllm_temp_model', speculative_config=None, tokenizer='/tmp/ray/session_2025-12-01_17-29-58_367918_5659/runtime_resources/working_dir_files/_ray_pkg_ae6d18a859cf39ae2e13023962299dddfe77a627/converted/vllm_temp_model', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_seq_len=2048, download_dir=None, load_format=auto, tensor_parallel_size=2, pipeline_parallel_size=1, data_parallel_size=1, disable_custom_all_reduce=False, quantization=None, enforce_eager=True, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_fallback=False, disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None), seed=42, served_model_name=/tmp/ray/session_2025-12-01_17-29-58_367918_5659/runtime_resources/working_dir_files/_ray_pkg_ae6d18a859cf39ae2e13023962299dddfe77a627/converted/vllm_temp_model, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'level': None, 'mode': <CompilationMode.NONE: 0>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['all'], 'splitting_ops': None, 'compile_mm_encoder': False, 'use_inductor': None, 'compile_sizes': [], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.NONE: 0>, 'cudagraph_num_of_warmups': 0, 'cudagraph_capture_sizes': [], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {}, 'max_cudagraph_capture_size': 0, 'local_cache_dir': None}
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m WARNING 12-02 00:02:24 [ray_utils.py:331] Tensor parallel size (2) exceeds available GPUs (0). This may result in Ray placement group allocation failures. Consider reducing tensor_parallel_size to 0 or less, or ensure your Ray cluster has 2 GPUs available.
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:24 [ray_utils.py:396] No current placement group found. Creating a new placement group.
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:31 [ray_env.py:66] RAY_NON_CARRY_OVER_ENV_VARS from config: set()
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:31 [ray_env.py:69] Copying the following environment variables to workers: ['LD_LIBRARY_PATH', 'VLLM_WORKER_MULTIPROC_METHOD']
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:31 [ray_env.py:74] If certain env vars should NOT be copied, add them to /home/ray/.config/vllm/ray_non_carry_over_env_vars.json file
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695551)[0m INFO 12-02 00:02:35 [worker_base.py:283] Injected <class 'torchtitan.experiments.wide_ep_rl.simple_rl_ray.WorkerExtension'> into <class 'vllm.v1.worker.gpu_worker.Worker'> for extended collective_rpc calls ['init_weight_update_group', 'recv_weights']
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695551)[0m WARNING 12-02 00:02:35 [worker_base.py:301] Missing `shared_worker_lock` argument from executor. This argument is needed for mm_processor_cache_type='shm'.[36m(main pid=693925)[0m Training:   0%|          | 0/100 [00:00<?, ?it/s]
+
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695551)[0m INFO 12-02 00:02:35 [parallel_state.py:1208] world_size=2 rank=1 local_rank=1 distributed_init_method=tcp://127.0.0.1:60331 backend=nccl
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695551)[0m [Gloo] Rank 1 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695551)[0m [Gloo] Rank 1 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m INFO 12-02 00:02:35 [pynccl.py:111] vLLM is using nccl==2.27.5
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695551)[0m INFO 12-02 00:02:38 [parallel_state.py:1394] rank 1 in world size 2 is assigned as DP rank 0, PP rank 0, TP rank 1, EP rank 1
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m INFO 12-02 00:02:38 [gpu_model_runner.py:3259] Starting to load model /tmp/ray/session_2025-12-01_17-29-58_367918_5659/runtime_resources/working_dir_files/_ray_pkg_ae6d18a859cf39ae2e13023962299dddfe77a627/converted/vllm_temp_model...
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695551)[0m INFO 12-02 00:02:41 [cuda.py:418] Valid backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION']
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695551)[0m INFO 12-02 00:02:41 [cuda.py:427] Using FLASH_ATTN backend.
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m INFO 12-02 00:02:35 [worker_base.py:283] Injected <class 'torchtitan.experiments.wide_ep_rl.simple_rl_ray.WorkerExtension'> into <class 'vllm.v1.worker.gpu_worker.Worker'> for extended collective_rpc calls ['init_weight_update_group', 'recv_weights']
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m WARNING 12-02 00:02:35 [worker_base.py:301] Missing `shared_worker_lock` argument from executor. This argument is needed for mm_processor_cache_type='shm'.
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m INFO 12-02 00:02:35 [parallel_state.py:1208] world_size=2 rank=0 local_rank=0 distributed_init_method=tcp://127.0.0.1:60331 backend=nccl
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m [Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1[32m [repeated 10x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m INFO 12-02 00:02:43 [default_loader.py:314] Loading weights took 0.38 seconds
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m INFO 12-02 00:02:43 [gpu_model_runner.py:3338] Model loading took 1.6124 GiB memory and 4.298700 seconds
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m INFO 12-02 00:02:38 [parallel_state.py:1394] rank 0 in world size 2 is assigned as DP rank 0, PP rank 0, TP rank 0, EP rank 0
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m INFO 12-02 00:02:49 [gpu_worker.py:359] Available KV cache memory: 15.90 GiB
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m INFO 12-02 00:02:42 [cuda.py:418] Valid backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION']
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695552)[0m INFO 12-02 00:02:42 [cuda.py:427] Using FLASH_ATTN backend.
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:49 [kv_cache_utils.py:1229] GPU KV cache size: 297,728 tokens
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:49 [kv_cache_utils.py:1234] Maximum concurrency for 2,048 tokens per request: 145.38x
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:49 [kv_cache_utils.py:1234] Maximum concurrency for 2,048 tokens per request: 145.38x
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:49 [core.py:250] init engine (profile, create kv cache, warmup model) took 5.91 seconds
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:50 [vllm.py:500] Cudagraph is disabled under eager mode
+[36m(VLLMRolloutEngine pid=694620)[0m INFO 12-02 00:02:50 [llm.py:352] Supported tasks: ['generate']
+[36m(RayTrainWorker pid=694617)[0m INFO 12-02 00:02:50 [pynccl.py:111] vLLM is using nccl==2.27.5
+[36m(main pid=693925)[0m ✓ Weight update groups initialized
+[36m(main pid=693925)[0m 
+[36m(main pid=693925)[0m Loading tokenizer...
+[36m(RayTrainWorker pid=694617)[0m Trainer initialized weight update group: rank=0/3
+[36m(main pid=693925)[0m ✓ Tokenizer loaded
+[36m(main pid=693925)[0m 
+[36m(main pid=693925)[0m ================================================================================
+[36m(main pid=693925)[0m Dataset Configuration
+[36m(main pid=693925)[0m ================================================================================
+[36m(main pid=693925)[0m Attempting to load GSM8K dataset (10 samples)...
+[36m(main pid=693925)[0m Loaded 10 prompts
+[36m(main pid=693925)[0m Reward function: math_reward_function
+[36m(main pid=693925)[0m First prompt: Question: Natalia sold clips to 48 of her friends in April, and then she sold ha...
+[36m(main pid=693925)[0m 
+[36m(main pid=693925)[0m ================================================================================
+[36m(main pid=693925)[0m TensorBoard logging enabled at: /mnt/local_storage/output/rl_training
+[36m(main pid=693925)[0m ================================================================================
+[36m(main pid=693925)[0m 
+[36m(main pid=693925)[0m Starting RL training for 100 steps...
+[36m(main pid=693925)[0m   Prompts: 10
+[36m(main pid=693925)[0m   Samples per prompt: 8
+[36m(main pid=693925)[0m   Rollout batches per update: 2
+[36m(main pid=693925)[0m   Total samples per update: 160
+[36m(main pid=693925)[0m   GRPO mode: Exponential (beta=0.1)
+[36m(main pid=693925)[0m   vLLM tensor parallel size: 2
+[36m(main pid=693925)[0m ================================================================================
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m [36m(RayWorkerWrapper pid=695551)[0m Worker initialized weight update group: rank=2/3
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:54 [ray_executor.py:538] RAY_CGRAPH_get_timeout is set to 300
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:54 [ray_executor.py:542] VLLM_USE_RAY_COMPILED_DAG_CHANNEL_TYPE = auto
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:54 [ray_executor.py:546] VLLM_USE_RAY_COMPILED_DAG_OVERLAP_COMM = False
+[36m(VLLMRolloutEngine pid=694620)[0m [1;36m(EngineCore_DP0 pid=695131)[0;0m INFO 12-02 00:02:54 [ray_executor.py:605] Using RayPPCommunicator (which wraps vLLM _PP GroupCoordinator) for Ray Compiled Graph communication.[36m(RayTrainWorker pid=694617)[0m /home/ray/anaconda3/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py:4876: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+[36m(RayTrainWorker pid=694617)[0m   warnings.warn(  # warn only once
+[36m(VLLMRolloutEngine pid=694620)[0m Adding requests:   0%|          | 0/20 [00:00<?, ?it/s]Adding requests: 100%|██████████| 20/20 [00:00<00:00, 826.66it/s]
+[36m(VLLMRolloutEngine pid=694620)[0m Processed prompts:   0%|          | 0/160 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s]
+[36m(VLLMRolloutEngine pid=694620)[0m Processed prompts:   5%|▌         | 8/160 [00:03<01:01,  2.48it/s, est. speed input: 103.96 toks/s, output: 247.52 toks/s]Processed prompts: 100%|██████████| 160/160 [00:03<00:00,  2.48it/s, est. speed input: 3227.17 toks/s, output: 4949.64 toks/s]Processed prompts: 100%|██████████| 160/160 [00:03<00:00, 49.49it/s, est. speed input: 3227.17 toks/s, output: 4949.64 toks/s]
+
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m   ⚠ vLLM-TorchTitan logprobs differ: 62/100 tokens
+[36m(RayTrainWorker pid=694617)[0m     Max delta: 1.886681e-01, Avg delta: 1.340920e-02
+[36m(RayTrainWorker pid=694617)[0m     vLLM logprobs:     ['-0.0670467541', '-0.2088427097', '-0.0016725374', '-0.0073597729', '-0.2838692367']
+[36m(RayTrainWorker pid=694617)[0m     TorchTitan logprobs: ['-0.0763107389', '-0.1313569695', '-0.0009494088', '-0.0065963385', '-0.3163403273']
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])[36m(main pid=693925)[0m Training:   1%|          | 1/100 [00:39<1:04:30, 39.10s/it]
+[36m(VLLMRolloutEngine pid=694620)[0m Adding requests:   0%|          | 0/20 [00:00<?, ?it/s]Adding requests: 100%|██████████| 20/20 [00:00<00:00, 1072.08it/s]
+[36m(VLLMRolloutEngine pid=694620)[0m Processed prompts:   0%|          | 0/160 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s]
+[36m(VLLMRolloutEngine pid=694620)[0m Processed prompts:   5%|▌         | 8/160 [00:02<00:54,  2.77it/s, est. speed input: 116.41 toks/s, output: 277.17 toks/s]Processed prompts: 100%|██████████| 160/160 [00:02<00:00,  2.77it/s, est. speed input: 3613.67 toks/s, output: 5542.43 toks/s]Processed prompts: 100%|██████████| 160/160 [00:02<00:00, 55.42it/s, est. speed input: 3613.67 toks/s, output: 5542.43 toks/s]
+
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m   ⚠ vLLM-TorchTitan logprobs differ: 62/100 tokens
+[36m(RayTrainWorker pid=694617)[0m     Max delta: 1.886681e-01, Avg delta: 1.340920e-02
+[36m(RayTrainWorker pid=694617)[0m     vLLM logprobs:     ['-0.0670467541', '-0.2088427097', '-0.0016725374', '-0.0073597729', '-0.2838692367']
+[36m(RayTrainWorker pid=694617)[0m     TorchTitan logprobs: ['-0.0763107389', '-0.1313569695', '-0.0009494088', '-0.0065963385', '-0.3163403273']
+[36m(main pid=693925)[0m 
+[36m(main pid=693925)[0m Step   0 | Loss: 0.1281 | Reward: +0.075 | Samples: 160
+[36m(main pid=693925)[0m   Sample:  48 + 24 = 72.
+[36m(main pid=693925)[0m Let me check the reasoning.
+[36m(main pid=693925)[0m Okay, so Natalia sold clips to 48 of ...
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 142, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 135, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 164, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 157, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 130, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 169, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/ray/default/repos/torchtitan/torchtitan/experiments/wide_ep_rl/simple_rl_ray.py", line 1800, in <module>
+    ray.get(main.remote())
+  File "/home/ray/anaconda3/lib/python3.12/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.12/site-packages/ray/_private/client_mode_hook.py", line 104, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.12/site-packages/ray/_private/worker.py", line 2961, in get
+    values, debugger_breakpoint = worker.get_objects(
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.12/site-packages/ray/_private/worker.py", line 998, in get_objects
+    ] = self.core_worker.get_objects(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "python/ray/_raylet.pyx", line 3141, in ray._raylet.CoreWorker.get_objects
+  File "python/ray/includes/common.pxi", line 97, in ray._raylet.check_status
+KeyboardInterrupt
+Exception ignored in atexit callback: <function shutdown at 0x7ed452befe20>
+Traceback (most recent call last):
+  File "/home/ray/anaconda3/lib/python3.12/site-packages/ray/_private/client_mode_hook.py", line 104, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.12/site-packages/ray/_private/worker.py", line 1158, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.12/site-packages/ray/_private/worker.py", line 2098, in shutdown
+    time.sleep(0.5)
+KeyboardInterrupt: 
+
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 161, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 210, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 213, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: logits shape: torch.Size([1, 171, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_logprobs shape: torch.Size([100, 151936])
+[36m(RayTrainWorker pid=694617)[0m DEBUG: gen_token_ids shape: torch.Size([100])
+[36m(RayTrainWorker pid=694617)[0m   ⚠ vLLM-TorchTitan logprobs differ: 66/100 tokens
+[36m(RayTrainWorker pid=694617)[0m     Max delta: 2.241686e+00, Avg delta: 1.000759e-01
+[36m(RayTrainWorker pid=694617)[0m     vLLM logprobs:     ['-0.0670467541', '-0.2088427097', '-0.0016725374', '-0.0073597729', '-0.2838692367']
+[36m(RayTrainWorker pid=694617)[0m     TorchTitan logprobs: ['-0.5800779462', '-0.0700404868', '-0.0007328685', '-0.0139358798', '-0.4326390922']
